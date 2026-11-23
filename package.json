@@ -1,0 +1,21 @@
+{
+  "name": "tsdraw",
+  "version": "0.1.0",
+  "description": "TypeScript-based chemical structure drawing application",
+  "license": "GPL-2.0-only",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "vite --config vite.app.config.ts",
+    "build": "tsc -p tsconfig.json --noEmit && vite build",
+    "build:app": "tsc -p tsconfig.json --noEmit && vite build --config vite.app.config.ts",
+    "preview:app": "vite preview --config vite.app.config.ts",
+    "test": "vitest"
+  },
+  "devDependencies": {
+    "@vitest/ui": "^4.1.11",
+    "typescript": "^5.5.4",
+    "vite": "^8.2.2",
+    "vitest": "^4.1.11"
+  }
+}

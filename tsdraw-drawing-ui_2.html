@@ -1,0 +1,1481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TSDraw - Molecular Drawing Interface</title>
+    <link rel="icon" href="data:,">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+            overflow: hidden;
+        }
+
+        /* Header — quiet, Claude-desktop-like top bar */
+        :root {
+            --header-h: 48px;
+            --ui-bg: #faf9f5;
+            --ui-surface: #ffffff;
+            --ui-border: rgba(31, 30, 29, 0.12);
+            --ui-text: #1f1e1d;
+            --ui-muted: #6b6a65;
+            --ui-hover: rgba(31, 30, 29, 0.06);
+            --ui-active: rgba(31, 30, 29, 0.10);
+            --ui-accent: #c96442;
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            height: var(--header-h);
+            background: var(--ui-bg);
+            border-bottom: 1px solid var(--ui-border);
+            padding: 0 12px;
+            gap: 12px;
+            color: var(--ui-text);
+        }
+
+        .hamburger {
+            cursor: pointer;
+            color: var(--ui-muted);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            transition: background 0.15s ease, color 0.15s ease;
+        }
+
+        .hamburger:hover,
+        .hamburger.active {
+            background: var(--ui-hover);
+            color: var(--ui-text);
+        }
+
+        .title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--ui-text);
+            font-family: ui-serif, Georgia, 'Times New Roman', serif;
+            font-size: 17px;
+            font-weight: 500;
+            letter-spacing: -0.01em;
+            white-space: nowrap;
+        }
+
+        .title-logo {
+            color: var(--ui-accent);
+        }
+
+        #appVersion {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            font-size: 11px;
+            font-weight: 500;
+            color: var(--ui-muted);
+            background: var(--ui-hover);
+            padding: 1px 6px;
+            border-radius: 999px;
+        }
+
+        /* Top Ribbon */
+        .ribbon {
+            display: flex;
+            gap: 2px;
+            align-items: center;
+            margin-left: 8px;
+        }
+
+        .ribbon-sep {
+            width: 1px;
+            height: 18px;
+            background: var(--ui-border);
+            margin: 0 6px;
+        }
+
+        .ribbon-btn {
+            background: transparent;
+            border: none;
+            color: var(--ui-text);
+            height: 30px;
+            padding: 0 8px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 13px;
+            white-space: nowrap;
+            transition: background 0.15s ease, color 0.15s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .ribbon-btn.icon-only {
+            width: 30px;
+            padding: 0;
+            justify-content: center;
+        }
+
+        .ribbon-btn:hover,
+        .ribbon-btn[aria-expanded="true"] {
+            background: var(--ui-hover);
+        }
+
+        .ribbon-btn:active {
+            background: var(--ui-active);
+        }
+
+        .ribbon-btn:focus-visible,
+        .hamburger:focus-visible {
+            outline: 2px solid var(--ui-accent);
+            outline-offset: 1px;
+        }
+
+        .ribbon-icon {
+            color: var(--ui-muted);
+            flex-shrink: 0;
+        }
+
+        .ribbon-btn:hover .ribbon-icon {
+            color: var(--ui-text);
+        }
+
+        .ribbon-chevron {
+            color: var(--ui-muted);
+            margin-left: -2px;
+        }
+
+        /* Top-bar dropdowns (Save as, Copy) */
+        .ribbon-dropdown {
+            position: relative;
+        }
+
+        .ribbon-menu {
+            display: none;
+            position: absolute;
+            top: calc(100% + 6px);
+            left: 0;
+            min-width: 190px;
+            background: var(--ui-surface);
+            border: 1px solid var(--ui-border);
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(31, 30, 29, 0.10), 0 1px 3px rgba(31, 30, 29, 0.06);
+            padding: 6px;
+            z-index: 600;
+        }
+
+        .ribbon-menu.active {
+            display: block;
+        }
+
+        .ribbon-menu-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            padding: 7px 10px;
+            border-radius: 8px;
+            color: var(--ui-text);
+            font-size: 13px;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .ribbon-menu-item:hover {
+            background: var(--ui-hover);
+        }
+
+        .ribbon-menu-ext {
+            color: var(--ui-muted);
+            font-size: 12px;
+        }
+
+        /* Split button: the main part runs the default, the arrow opens the menu */
+        .ribbon-split {
+            display: flex;
+        }
+
+        .ribbon-split .ribbon-split-main {
+            border-top-right-radius: 0;
+            border-bottom-right-radius: 0;
+        }
+
+        .ribbon-split .ribbon-split-arrow {
+            width: 20px;
+            padding: 0;
+            justify-content: center;
+            border-top-left-radius: 0;
+            border-bottom-left-radius: 0;
+        }
+
+        .ribbon-split:hover .ribbon-btn {
+            background: var(--ui-hover);
+        }
+
+        .ribbon-split .ribbon-btn:hover {
+            background: var(--ui-active);
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 80px;
+            height: calc(100vh - var(--header-h));
+            background: #fff;
+            border-right: 1px solid #ddd;
+            display: flex;
+            flex-direction: column;
+            padding: 15px 0;
+            overflow: visible; /* dropdown menus extend past the sidebar edge */
+            box-shadow: 2px 0 8px rgba(0,0,0,0.05);
+        }
+
+        .template-group {
+            padding: 0;
+            margin-bottom: 6px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .template-btn {
+            width: 50px;
+            height: 50px;
+            border: 1px solid #ddd;
+            background: #f9f9f9;
+            cursor: pointer;
+            font-size: 28px;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 0;
+            padding: 0;
+        }
+
+        .template-btn:hover {
+            background: #f0f0f0;
+            border-color: #667eea;
+            color: #667eea;
+            transform: scale(0.95);
+        }
+
+        .template-btn.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        }
+
+        .expand-indicator {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            font-size: 10px;
+            opacity: 0.6;
+        }
+
+        .template-btn.expanded .expand-indicator {
+            transform: rotate(180deg);
+        }
+
+        /* Expandable Menu */
+        .expanded-menu {
+            display: none;
+            position: absolute;
+            left: 80px;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 8px;
+            gap: 8px;
+            flex-direction: column;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            min-width: 160px;
+            z-index: 100;
+        }
+
+        /* The arrows button is the last one: its menu opens upward so it stays on screen. */
+        #arrowMenu {
+            bottom: 0;
+        }
+
+        .expanded-menu.active {
+            display: flex;
+        }
+
+        .expanded-menu-item {
+            padding: 6px 10px;
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s ease;
+            text-align: center;
+        }
+
+        .expanded-menu-item:hover {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        #selectMenu,
+        #bondMenu,
+        #ringMenu,
+        #aromaticMenu,
+        #halogenMenu,
+        #arrowMenu {
+            min-width: 0;
+        }
+
+        /* Element choices: square tiles with the symbol, like the toolbar buttons. */
+        .expanded-menu-item.element-item {
+            width: 40px;
+            height: 40px;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .expanded-menu-item.icon-only {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 4px 10px;
+        }
+
+        /* Text box for the T tool */
+        #atomTextInput {
+            display: none;
+            position: fixed;
+            transform: translate(-50%, -50%);
+            width: 90px;
+            padding: 3px 6px;
+            font: 14px Arial, sans-serif;
+            border: 2px solid #667eea;
+            border-radius: 4px;
+            background: #fff;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            z-index: 1500;
+            outline: none;
+        }
+
+        /* Periodic table modal */
+        .periodic-grid {
+            display: grid;
+            grid-template-columns: repeat(18, 44px);
+            grid-template-rows: repeat(7, 44px) 12px repeat(2, 44px);
+            gap: 4px;
+        }
+
+        .pt-cell {
+            position: relative;
+            border: 1px solid rgba(0, 0, 0, 0.12);
+            border-radius: 4px;
+            cursor: pointer;
+            color: #333;
+            padding: 0;
+            transition: all 0.15s ease;
+        }
+
+        .pt-s { background: #fde2e4; }
+        .pt-p { background: #e2f0cb; }
+        .pt-d { background: #dbe7fb; }
+        .pt-f { background: #efe3f7; }
+
+        .pt-cell:hover {
+            background: #667eea;
+            border-color: #667eea;
+            color: white;
+        }
+
+        .pt-number {
+            position: absolute;
+            top: 2px;
+            left: 4px;
+            font-size: 9px;
+            opacity: 0.7;
+        }
+
+        .pt-symbol {
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        .pt-marker {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            color: #888;
+            border: 1px dashed #ccc;
+            border-radius: 4px;
+        }
+
+        /* Main Canvas Area */
+        .main-content {
+            flex: 1;
+            min-height: 0; /* let the canvas area shrink to make room for the Claude panel */
+            display: flex;
+            flex-direction: column;
+            background: white;
+            position: relative;
+        }
+
+        .canvas-area {
+            flex: 1;
+            min-height: 0;
+            overflow: hidden;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: crosshair;
+        }
+
+        canvas {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+            cursor: crosshair;
+            max-width: 90%;
+            max-height: 90%;
+        }
+
+        /* Ask Claude panel */
+        .claude-panel {
+            border-top: 1px solid #ddd;
+            background: #fafbff;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .claude-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 6px 14px;
+            border-bottom: 1px solid #e6e8f5;
+            font-size: 13px;
+        }
+
+        .claude-title {
+            font-weight: 600;
+            color: #4a3f9b;
+        }
+
+        .ai-switch {
+            display: inline-flex;
+            border: 1px solid #ccd;
+            border-radius: 6px;
+            overflow: hidden;
+            background: #fff;
+        }
+
+        .ai-switch button {
+            font-size: 12px;
+            padding: 3px 10px;
+            border: none;
+            border-right: 1px solid #ccd;
+            background: transparent;
+            color: #555;
+            cursor: pointer;
+        }
+
+        .ai-switch button:last-child {
+            border-right: none;
+        }
+
+        .ai-switch button:hover {
+            background: #f0f1fb;
+        }
+
+        .ai-switch button[aria-checked="true"] {
+            background: #4a3f9b;
+            color: #fff;
+        }
+
+        .ai-switch button[data-provider="openai"][aria-checked="true"] {
+            background: #10a37f;
+        }
+
+        .ai-switch button[data-provider="grok"][aria-checked="true"] {
+            background: #222;
+        }
+
+        .ai-from {
+            display: block;
+            font-size: 11px;
+            font-weight: 600;
+            color: #888;
+            margin-bottom: 2px;
+        }
+
+        .claude-sub {
+            color: #888;
+            font-size: 12px;
+        }
+
+        .claude-spacer {
+            flex: 1;
+        }
+
+        .claude-header select,
+        .claude-small-btn {
+            font-size: 12px;
+            padding: 3px 8px;
+            border: 1px solid #ccd;
+            border-radius: 4px;
+            background: #fff;
+            cursor: pointer;
+        }
+
+        .claude-panel.collapsed .claude-body {
+            display: none;
+        }
+
+        .claude-body {
+            display: flex;
+            flex-direction: column;
+            height: 210px;
+        }
+
+        .claude-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            font-size: 13px;
+            line-height: 1.45;
+        }
+
+        .claude-hint {
+            color: #999;
+            font-style: italic;
+        }
+
+        .claude-msg {
+            max-width: 85%;
+            padding: 6px 10px;
+            border-radius: 8px;
+            white-space: normal;
+            word-wrap: break-word;
+        }
+
+        .claude-user {
+            align-self: flex-end;
+            background: #667eea;
+            color: #fff;
+        }
+
+        .claude-claude {
+            align-self: flex-start;
+            background: #fff;
+            border: 1px solid #e3e5f0;
+            color: #222;
+        }
+
+        .claude-tool {
+            align-self: flex-start;
+            background: #eef7ee;
+            border: 1px solid #cfe6cf;
+            color: #245a24;
+            font-size: 12px;
+        }
+
+        .claude-error {
+            align-self: flex-start;
+            background: #fdecec;
+            border: 1px solid #f3c4c4;
+            color: #a12a2a;
+            font-size: 12px;
+        }
+
+        .claude-msg code {
+            font-family: Consolas, monospace;
+            font-size: 12px;
+            background: rgba(0,0,0,0.05);
+            padding: 0 3px;
+            border-radius: 3px;
+            word-break: break-all;
+        }
+
+        .claude-user code {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .claude-thinking {
+            color: #888;
+            font-style: italic;
+        }
+
+        .claude-input {
+            display: flex;
+            gap: 8px;
+            padding: 8px 14px;
+            border-top: 1px solid #e6e8f5;
+        }
+
+        .claude-input textarea {
+            flex: 1;
+            resize: none;
+            font: 13px Arial, sans-serif;
+            padding: 6px 8px;
+            border: 1px solid #ccd;
+            border-radius: 6px;
+            outline: none;
+        }
+
+        .claude-input textarea:focus {
+            border-color: #667eea;
+        }
+
+        .claude-input button {
+            padding: 0 18px;
+            border: none;
+            border-radius: 6px;
+            background: #667eea;
+            color: #fff;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .claude-input button:disabled {
+            background: #b3bce8;
+            cursor: default;
+        }
+
+        /* Status Bar */
+        .status-bar {
+            height: 40px;
+            background: #f5f5f5;
+            border-top: 1px solid #ddd;
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            gap: 30px;
+            font-size: 12px;
+            color: #666;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #667eea;
+        }
+
+        /* App menu (☰): dark cascading menu like the Claude desktop app */
+        .sidebar-menu,
+        .ribbon-menu {
+            --m-bg: #2b2a27;
+            --m-border: rgba(255, 255, 255, 0.09);
+            --m-text: #ecebe6;
+            --m-muted: #a8a69e;
+            --m-hover: rgba(255, 255, 255, 0.08);
+            --m-sep: rgba(255, 255, 255, 0.10);
+        }
+
+        .sidebar-menu {
+            position: fixed;
+            left: 8px;
+            top: calc(var(--header-h) - 4px);
+            z-index: 1000;
+            display: none;
+        }
+
+        .sidebar-menu.active {
+            display: block;
+        }
+
+        .menu-panel {
+            background: var(--m-bg);
+            border: 1px solid var(--m-border);
+            border-radius: 10px;
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.28), 0 2px 6px rgba(0, 0, 0, 0.18);
+            padding: 5px;
+            color: var(--m-text);
+            font-size: 14px;
+        }
+
+        .menu-panel.top {
+            width: 128px;
+        }
+
+        .menu-cat {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 12px 8px 20px;
+            border-radius: 6px;
+            cursor: default;
+            user-select: none;
+        }
+
+        .menu-cat-chevron {
+            color: var(--m-muted);
+        }
+
+        .menu-cat:hover,
+        .menu-cat.open {
+            background: var(--m-hover);
+        }
+
+        .menu-cat > .submenu {
+            display: none;
+            position: absolute;
+            left: calc(100% + 1px);
+            top: -6px;
+            min-width: 270px;
+        }
+
+        .menu-cat:hover > .submenu,
+        .menu-cat.open > .submenu {
+            display: block;
+        }
+
+        .menu-item {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+            padding: 8px 14px 8px 20px;
+            border-radius: 6px;
+            cursor: default;
+            color: var(--m-text);
+            white-space: nowrap;
+        }
+
+        .menu-item:hover {
+            background: var(--m-hover);
+        }
+
+        .menu-kbd {
+            margin-left: auto;
+            color: var(--m-muted);
+            font-size: 13px;
+        }
+
+        .menu-sep {
+            height: 1px;
+            background: var(--m-sep);
+            margin: 5px -5px;
+        }
+
+        /* Top-bar dropdowns (Save as, Copy) in the same dark style */
+        .ribbon-menu {
+            background: var(--m-bg) !important;
+            border-color: var(--m-border) !important;
+            border-radius: 10px !important;
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.28), 0 2px 6px rgba(0, 0, 0, 0.18) !important;
+            padding: 5px !important;
+        }
+
+        .ribbon-menu .ribbon-menu-item {
+            color: var(--m-text);
+            font-size: 14px;
+            padding: 8px 14px;
+            border-radius: 6px;
+            gap: 24px;
+        }
+
+        .ribbon-menu .ribbon-menu-item:hover {
+            background: var(--m-hover);
+        }
+
+        .ribbon-menu .ribbon-menu-ext {
+            color: var(--m-muted);
+            font-size: 13px;
+        }
+
+/* Help dialog (Help › Quick tutorial / Help / About): reuses the settings dialog layout */
+        .help-dialog { width: min(820px, 94vw); height: min(600px, 88vh); }
+        .help-dialog .settings-nav { overflow-y: auto; }
+        .help-nav-label { color: var(--ui-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; padding: 12px 10px 4px; }
+        .help-subtab { padding-left: 18px; font-size: 13px; }
+        .help-nav-spacer { flex: 1; min-height: 12px; }
+        .help-pane { line-height: 1.55; max-width: 580px; }
+        .help-pane p { margin: 0 0 10px; }
+        .help-pane a { color: var(--ui-accent); }
+        .help-pane .help-gap { margin-top: 18px; }
+        .help-steps, .help-list { margin: 8px 0 0 20px; padding: 0; }
+        .help-steps li, .help-list li { margin-bottom: 8px; }
+        .help-pane kbd { font: 12px ui-monospace, SFMono-Regular, Menlo, monospace; background: var(--ui-bg); border: 1px solid var(--ui-border); border-bottom-width: 2px; border-radius: 5px; padding: 0 5px; white-space: nowrap; }
+        .help-pane code { font-size: 12px; background: var(--ui-hover); padding: 1px 4px; border-radius: 4px; }
+        .help-keys, .help-about { border-collapse: collapse; width: 100%; margin-top: 6px; }
+        .help-keys td, .help-about td { padding: 6px 8px; border-bottom: 1px solid var(--ui-border); vertical-align: top; }
+        .help-keys td:first-child { width: 42%; white-space: nowrap; }
+        .help-keys th { text-align: left; font-size: 12px; color: var(--ui-muted); text-transform: uppercase; letter-spacing: 0.05em; padding: 14px 8px 4px; }
+        .help-about td:first-child { width: 120px; color: var(--ui-muted); }
+        .help-notice { color: var(--ui-muted); font-size: 13px; }
+        .help-pane details summary { cursor: pointer; color: var(--ui-accent); font-size: 13px; }
+        .help-license { margin-top: 16px; padding: 12px; background: var(--ui-bg); border: 1px solid var(--ui-border); border-radius: 8px; font-size: 12px; white-space: pre-wrap; max-height: 240px; overflow: auto; }
+
+/* Settings dialog (File › Settings) */
+        .settings-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(31, 30, 29, 0.35);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 3000;
+        }
+
+        .settings-backdrop[hidden] {
+            display: none;
+        }
+
+        .settings-dialog {
+            display: flex;
+            width: min(760px, 94vw);
+            height: min(560px, 88vh);
+            background: var(--ui-bg);
+            border: 1px solid var(--ui-border);
+            border-radius: 14px;
+            box-shadow: 0 24px 64px rgba(31, 30, 29, 0.25);
+            overflow: hidden;
+            color: var(--ui-text);
+            font-size: 14px;
+        }
+
+        .settings-nav {
+            width: 190px;
+            flex-shrink: 0;
+            padding: 18px 10px;
+            border-right: 1px solid var(--ui-border);
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .settings-title {
+            font-family: ui-serif, Georgia, 'Times New Roman', serif;
+            font-size: 20px;
+            font-weight: 500;
+            padding: 0 10px 14px;
+        }
+
+        .settings-tab {
+            text-align: left;
+            background: transparent;
+            border: none;
+            border-radius: 8px;
+            padding: 8px 10px;
+            font: inherit;
+            color: var(--ui-text);
+            cursor: pointer;
+        }
+
+        .settings-tab:hover {
+            background: var(--ui-hover);
+        }
+
+        .settings-tab.active {
+            background: var(--ui-active);
+            font-weight: 600;
+        }
+
+        .settings-tab:focus-visible,
+        .settings-btn:focus-visible,
+        .settings-close:focus-visible {
+            outline: 2px solid var(--ui-accent);
+            outline-offset: 1px;
+        }
+
+        .settings-main {
+            position: relative;
+            flex: 1;
+            overflow-y: auto;
+            padding: 22px 28px 24px;
+            background: var(--ui-surface);
+        }
+
+        .settings-close {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: none;
+            border-radius: 8px;
+            background: transparent;
+            color: var(--ui-muted);
+            cursor: pointer;
+        }
+
+        .settings-close:hover {
+            background: var(--ui-hover);
+            color: var(--ui-text);
+        }
+
+        .settings-heading {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .settings-intro {
+            color: var(--ui-muted);
+            font-size: 13px;
+            line-height: 1.45;
+            margin-bottom: 12px;
+            max-width: 520px;
+        }
+
+        .settings-intro code {
+            font-size: 12px;
+            background: var(--ui-hover);
+            padding: 1px 4px;
+            border-radius: 4px;
+        }
+
+        .settings-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--ui-border);
+        }
+
+        .settings-row-label {
+            font-weight: 500;
+        }
+
+        .settings-row-hint {
+            color: var(--ui-muted);
+            font-size: 12px;
+            margin-top: 2px;
+        }
+
+        .settings-control {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .settings-control input[type="range"] {
+            width: 150px;
+            accent-color: var(--ui-accent);
+        }
+
+        .settings-number,
+        .settings-select,
+        .settings-input {
+            font: inherit;
+            font-size: 13px;
+            color: var(--ui-text);
+            background: var(--ui-surface);
+            border: 1px solid var(--ui-border);
+            border-radius: 8px;
+            padding: 5px 8px;
+        }
+
+        .settings-number {
+            width: 64px;
+        }
+
+        .settings-select {
+            min-width: 170px;
+        }
+
+        .settings-number:focus,
+        .settings-select:focus,
+        .settings-input:focus {
+            outline: none;
+            border-color: var(--ui-accent);
+            box-shadow: 0 0 0 3px rgba(201, 100, 66, 0.15);
+        }
+
+        .settings-unit {
+            width: 18px;
+            color: var(--ui-muted);
+            font-size: 12px;
+        }
+
+        .settings-switch {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--ui-accent);
+        }
+
+        .settings-color {
+            width: 44px;
+            height: 28px;
+            padding: 2px;
+            border: 1px solid var(--ui-border);
+            border-radius: 8px;
+            background: var(--ui-surface);
+            cursor: pointer;
+        }
+
+        .settings-btn {
+            font: inherit;
+            font-size: 13px;
+            color: var(--ui-text);
+            background: var(--ui-surface);
+            border: 1px solid var(--ui-border);
+            border-radius: 8px;
+            padding: 6px 12px;
+            cursor: pointer;
+        }
+
+        .settings-btn.small {
+            padding: 5px 10px;
+        }
+
+        .settings-btn:hover {
+            background: var(--ui-hover);
+        }
+
+        .settings-btn:disabled {
+            opacity: 0.5;
+            cursor: default;
+        }
+
+        .settings-footer {
+            padding-top: 16px;
+        }
+
+        .settings-key {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            width: 360px;
+        }
+
+        .settings-key-line {
+            display: flex;
+            gap: 6px;
+        }
+
+        .settings-input {
+            flex: 1;
+            min-width: 0;
+            font-family: Consolas, 'Courier New', monospace;
+        }
+
+        .settings-key-meta {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+        }
+
+        .settings-key-meta a {
+            color: var(--ui-accent);
+            text-decoration: none;
+        }
+
+        .settings-key-meta a:hover {
+            text-decoration: underline;
+        }
+
+        .settings-key-status {
+            color: var(--ui-muted);
+        }
+
+        .settings-key-status.ok {
+            color: #2e7d4f;
+        }
+
+        .settings-key-status.error {
+            color: #b3261e;
+        }
+
+        /* Layout */
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+
+        .content-wrapper {
+            display: flex;
+            flex: 1;
+            height: calc(100vh - var(--header-h));
+        }
+
+        /* Template Button Label */
+        .template-label {
+            font-size: 9px;
+            position: absolute;
+            bottom: 2px;
+            width: 100%;
+            text-align: center;
+            opacity: 0.7;
+        }
+
+        /* Tooltip */
+        .tooltip {
+            position: absolute;
+            background: #333;
+            color: white;
+            padding: 6px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            white-space: nowrap;
+            pointer-events: none;
+            z-index: 999;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+
+        .template-btn:hover .tooltip {
+            opacity: 1;
+            left: 100%;
+            top: 50%;
+            transform: translateY(-50%);
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div style="position: fixed; top: 0; left: 0; right: 0; z-index: 500;">
+            <div class="header">
+                <div class="hamburger" id="hamburger" role="button" tabindex="0" title="Menu" aria-label="Menu"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16"/><path d="M4 12h11"/><path d="M4 18h16"/></svg></div>
+                <div class="title"><svg class="title-logo" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" aria-hidden="true"><path d="M12 2.5 20.2 7.25v9.5L12 21.5 3.8 16.75v-9.5z"/><circle cx="12" cy="12" r="4.2"/></svg><span>TSDraw</span> <span id="appVersion"></span></div>
+                <div class="ribbon">
+                    <button class="ribbon-btn" data-action="new" title="New drawing" aria-label="New drawing"><svg class="ribbon-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M12 11v6M9 14h6"/></svg><span class="ribbon-label">New</span></button>
+                    <button class="ribbon-btn" data-action="open" title="Open a JSON drawing" aria-label="Open a JSON drawing"><svg class="ribbon-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6.5A1.5 1.5 0 0 1 4.5 5H9l2 2h8.5A1.5 1.5 0 0 1 21 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 17.5z"/></svg><span class="ribbon-label">Open</span></button>
+                    <button class="ribbon-btn" data-action="save" title="Save as JSON (tsdraw)" aria-label="Save as JSON (tsdraw)"><svg class="ribbon-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8"/><path d="M7 3v5h8"/></svg><span class="ribbon-label">Save</span></button>
+                    <div class="ribbon-dropdown">
+                        <button class="ribbon-btn" id="saveAsBtn" data-menu="saveAsMenu" title="Save the molecule in another format" aria-haspopup="true"><svg class="ribbon-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3"/><path d="m7 8 5-5 5 5"/><path d="M5 15v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4"/></svg><span class="ribbon-label">Save as</span><svg class="ribbon-chevron" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+                        <div class="ribbon-menu" id="saveAsMenu">
+                            <div class="ribbon-menu-item" data-action="save-smiles">SMILES <span class="ribbon-menu-ext">.smi</span></div>
+                            <div class="ribbon-menu-item" data-action="save-mol">MOL file <span class="ribbon-menu-ext">.mol</span></div>
+                        </div>
+                    </div>
+                    <span class="ribbon-sep" aria-hidden="true"></span>
+                    <div class="ribbon-dropdown ribbon-split">
+                        <button class="ribbon-btn ribbon-split-main" data-action="copy-mol" title="Copy as MOL file (Ctrl+C) — the selection, or the whole drawing"><svg class="ribbon-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span class="ribbon-label">Copy</span></button><button class="ribbon-btn ribbon-split-arrow" id="copyMenuBtn" data-menu="copyMenu" title="More copy formats" aria-haspopup="true"><svg class="ribbon-chevron" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+                        <div class="ribbon-menu" id="copyMenu">
+                            <div class="ribbon-menu-item" data-action="copy-mol">Copy as MOL file <span class="ribbon-menu-ext">Ctrl+C</span></div>
+                            <div class="ribbon-menu-item" data-action="copy-smiles">Copy as SMILES</div>
+                        </div>
+                    </div>
+                    <button class="ribbon-btn" data-action="paste" title="Paste a MOL file or SMILES from the clipboard (Ctrl+V)" aria-label="Paste a MOL file or SMILES from the clipboard (Ctrl+V)"><svg class="ribbon-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg><span class="ribbon-label">Paste</span></button>
+                    <span class="ribbon-sep" aria-hidden="true"></span>
+                    <button class="ribbon-btn icon-only" data-action="undo" title="Undo (Ctrl+Z)" aria-label="Undo (Ctrl+Z)"><svg class="ribbon-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></button>
+                    <button class="ribbon-btn icon-only" data-action="redo" title="Redo (Ctrl+Y)" aria-label="Redo (Ctrl+Y)"><svg class="ribbon-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 14 5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></svg></button>
+                    <span class="ribbon-sep" aria-hidden="true"></span>
+                    <button class="ribbon-btn" data-action="clean" title="Clean up the layout" aria-label="Clean up the layout"><svg class="ribbon-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 21 10-10"/><path d="M15 3v2M15 11v2M11 7h2M17 7h2M18 4l-1 1M12 10l1-1M18 10l-1-1"/></svg><span class="ribbon-label">Clean up</span></button>
+                    <button class="ribbon-btn" data-action="expand" title="Expand text labels (NO2, COOH, OMe…) into atoms and bonds: the selected ones, or all" aria-label="Expand text labels (NO2, COOH, OMe…) into atoms and bonds: the selected ones, or all"><svg class="ribbon-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="m21 3-7 7"/><path d="m3 21 7-7"/></svg><span class="ribbon-label">Expand</span></button>
+                    <button class="ribbon-btn" data-action="png" title="Export as PNG image" aria-label="Export as PNG image"><svg class="ribbon-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/></svg><span class="ribbon-label">PNG</span></button>
+                    <span class="ribbon-sep" aria-hidden="true"></span>
+                    <button class="ribbon-btn icon-only" data-action="delete" title="Delete the selection" aria-label="Delete the selection"><svg class="ribbon-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
+                    <button class="ribbon-btn icon-only" data-action="clear" title="Clear: remove everything from the drawing area (Ctrl+Z brings it back)" aria-label="Clear: remove everything from the drawing area (Ctrl+Z brings it back)"><svg class="ribbon-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m7 21-4.3-4.3a1 1 0 0 1 0-1.4l10-10a1 1 0 0 1 1.4 0l5.6 5.6a1 1 0 0 1 0 1.4L11 21"/><path d="M22 21H7"/><path d="m5 11 9 9"/></svg></button>
+                </div>
+            </div>
+        </div>
+
+        <!-- App menu (☰) -->
+        <div class="sidebar-menu" id="sidebarMenu">
+            <div class="menu-panel top" role="menu">
+                    <div class="menu-cat" role="menuitem" aria-haspopup="true"><span>File</span><svg class="menu-cat-chevron" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
+                        <div class="menu-panel submenu" role="menu">
+                            <div class="menu-item" data-action="new" role="menuitem"><span>New drawing</span></div>
+                            <div class="menu-item" data-action="open" role="menuitem"><span>Open JSON…</span></div>
+                            <div class="menu-sep" role="separator"></div>
+                            <div class="menu-item" data-action="save" role="menuitem"><span>Save JSON</span></div>
+                            <div class="menu-item" data-action="save-smiles" role="menuitem"><span>Save as SMILES…</span></div>
+                            <div class="menu-item" data-action="save-mol" role="menuitem"><span>Save as MOL file…</span></div>
+                            <div class="menu-sep" role="separator"></div>
+                            <div class="menu-item" data-action="png" role="menuitem"><span>Export PNG</span></div>
+                            <div class="menu-sep" role="separator"></div>
+                            <div class="menu-item" data-action="settings" role="menuitem"><span>Settings…</span><span class="menu-kbd">Ctrl+,</span></div>
+                        </div>
+                    </div>
+                    <div class="menu-cat" role="menuitem" aria-haspopup="true"><span>Edit</span><svg class="menu-cat-chevron" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
+                        <div class="menu-panel submenu" role="menu">
+                            <div class="menu-item" data-action="undo" role="menuitem"><span>Undo</span><span class="menu-kbd">Ctrl+Z</span></div>
+                            <div class="menu-item" data-action="redo" role="menuitem"><span>Redo</span><span class="menu-kbd">Ctrl+Y</span></div>
+                            <div class="menu-sep" role="separator"></div>
+                            <div class="menu-item" data-action="copy-mol" role="menuitem"><span>Copy as MOL file</span><span class="menu-kbd">Ctrl+C</span></div>
+                            <div class="menu-item" data-action="copy-smiles" role="menuitem"><span>Copy as SMILES</span></div>
+                            <div class="menu-item" data-action="paste" role="menuitem"><span>Paste MOL file / SMILES</span><span class="menu-kbd">Ctrl+V</span></div>
+                            <div class="menu-sep" role="separator"></div>
+                            <div class="menu-item" data-action="delete" role="menuitem"><span>Delete selection</span><span class="menu-kbd">Del</span></div>
+                            <div class="menu-item" data-action="clear" role="menuitem"><span>Clear drawing</span></div>
+                        </div>
+                    </div>
+                    <div class="menu-cat" role="menuitem" aria-haspopup="true"><span>Structure</span><svg class="menu-cat-chevron" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
+                        <div class="menu-panel submenu" role="menu">
+                            <div class="menu-item" data-action="clean" role="menuitem"><span>Clean up layout</span></div>
+                            <div class="menu-item" data-action="expand" role="menuitem"><span>Expand labels</span></div>
+                        </div>
+                    </div>
+                    <div class="menu-cat" role="menuitem" aria-haspopup="true"><span>View</span><svg class="menu-cat-chevron" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
+                        <div class="menu-panel submenu" role="menu">
+                            <div class="menu-item" data-action="toggle-ai" role="menuitem"><span>Show / hide AI panel</span></div>
+                        </div>
+                    </div>
+                    <div class="menu-cat" role="menuitem" aria-haspopup="true"><span>Help</span><svg class="menu-cat-chevron" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
+                        <div class="menu-panel submenu" role="menu">
+                            <div class="menu-item" data-action="tutorial" role="menuitem"><span>Quick tutorial</span></div>
+                            <div class="menu-item" data-action="help" role="menuitem"><span>Help</span><span class="menu-kbd">F1</span></div>
+                            <div class="menu-item" data-action="about" role="menuitem"><span>About TSDraw</span></div>
+                        </div>
+                    </div>
+            </div>
+        </div>
+
+        <!-- Content Wrapper -->
+        <div class="content-wrapper" style="margin-top: var(--header-h);">
+            <!-- Sidebar with Templates -->
+            <div class="sidebar">
+                <!-- 0. Selection: lasso (default), rectangle -->
+                <div class="template-group" style="position: relative;">
+                    <button class="template-btn" id="selectBtn" title="Lasso select (hold for rectangle select)">
+                        <svg class="tool-icon" viewBox="0 0 32 32" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="17" cy="12" rx="11" ry="7" stroke-dasharray="3.5 2.5"/><path d="M10 17.5c-2.5 2-3 4.5-1.5 6.5s1 4-1 5"/></svg>
+                        <span class="expand-indicator">▼</span>
+                    </button>
+                    <div class="expanded-menu" id="selectMenu">
+                        <div class="expanded-menu-item icon-only" data-select="lasso" title="Lasso select" aria-label="Lasso select"><svg class="menu-icon" viewBox="0 0 32 32" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="17" cy="12" rx="11" ry="7" stroke-dasharray="3.5 2.5"/><path d="M10 17.5c-2.5 2-3 4.5-1.5 6.5s1 4-1 5"/></svg></div>
+                        <div class="expanded-menu-item icon-only" data-select="rect" title="Rectangle select" aria-label="Rectangle select"><svg class="menu-icon" viewBox="0 0 32 32" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="7" width="22" height="18" stroke-dasharray="3.5 2.5"/></svg></div>
+                    </div>
+                </div>
+                <!-- 1. Bonds: single, double, triple, up/down stereo, both -->
+                <div class="template-group" style="position: relative;">
+                    <button class="template-btn" id="bondBtn" title="Single bond (hold for more bonds)">
+                        <svg class="tool-icon" viewBox="0 0 32 32" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="7" y1="25" x2="25" y2="7"/></svg>
+                        <span class="expand-indicator">▼</span>
+                    </button>
+                    <div class="expanded-menu" id="bondMenu">
+                        <div class="expanded-menu-item icon-only" data-bond="single" title="Single bond (1)" aria-label="Single bond"><svg class="menu-icon" viewBox="0 0 32 14" width="40" height="18" aria-hidden="true"><line x1="3" y1="7" x2="29" y2="7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></div>
+                        <div class="expanded-menu-item icon-only" data-bond="double" title="Double bond (2)" aria-label="Double bond"><svg class="menu-icon" viewBox="0 0 32 14" width="40" height="18" aria-hidden="true"><line x1="3" y1="5" x2="29" y2="5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><line x1="3" y1="9" x2="29" y2="9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></div>
+                        <div class="expanded-menu-item icon-only" data-bond="triple" title="Triple bond (3)" aria-label="Triple bond"><svg class="menu-icon" viewBox="0 0 32 14" width="40" height="18" aria-hidden="true"><line x1="3" y1="3.5" x2="29" y2="3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><line x1="3" y1="7" x2="29" y2="7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><line x1="3" y1="10.5" x2="29" y2="10.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></div>
+                        <div class="expanded-menu-item icon-only" data-chiral="wedge" title="Wedge bond up: toward the viewer (9)" aria-label="Wedge bond up: toward the viewer"><svg class="menu-icon" viewBox="0 0 32 14" width="40" height="18" aria-hidden="true"><polygon points="3,7 29,2 29,12" fill="currentColor"/></svg></div>
+                        <div class="expanded-menu-item icon-only" data-chiral="hash" title="Wedge bond down: away from the viewer (0)" aria-label="Wedge bond down: away from the viewer"><svg class="menu-icon" viewBox="0 0 32 14" width="40" height="18" aria-hidden="true"><g stroke="currentColor" stroke-width="1.6"><line x1="5" y1="6.1" x2="5" y2="7.9"/><line x1="10" y1="5.1" x2="10" y2="8.9"/><line x1="15" y1="4.1" x2="15" y2="9.9"/><line x1="20" y1="3.1" x2="20" y2="10.9"/><line x1="25" y1="2.1" x2="25" y2="11.9"/><line x1="29" y1="1.3" x2="29" y2="12.7"/></g></svg></div>
+                        <div class="expanded-menu-item icon-only" data-chiral="both" title="Wavy bond: stereochemistry unspecified or both" aria-label="Wavy bond: stereochemistry unspecified or both"><svg class="menu-icon" viewBox="0 0 32 14" width="40" height="18" aria-hidden="true"><polyline points="3.0,7.00 3.5,8.06 4.0,8.99 4.5,9.66 5.0,9.98 5.5,9.91 6.0,9.47 6.5,8.70 7.0,7.72 7.5,6.64 8.0,5.61 8.5,4.75 9.0,4.19 9.5,4.00 10.0,4.19 10.5,4.75 11.0,5.61 11.5,6.64 12.0,7.72 12.5,8.70 13.0,9.47 13.5,9.91 14.0,9.98 14.5,9.66 15.0,8.99 15.5,8.06 16.0,7.00 16.5,5.94 17.0,5.01 17.5,4.34 18.0,4.02 18.5,4.09 19.0,4.53 19.5,5.30 20.0,6.28 20.5,7.36 21.0,8.39 21.5,9.25 22.0,9.81 22.5,10.00 23.0,9.81 23.5,9.25 24.0,8.39 24.5,7.36 25.0,6.28 25.5,5.30 26.0,4.53 26.5,4.09 27.0,4.02 27.5,4.34 28.0,5.01 28.5,5.94 29.0,7.00" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></div>
+                    </div>
+                </div>
+
+                <!-- 2. Rings made of single bonds -->
+                <div class="template-group" style="position: relative;">
+                    <button class="template-btn" id="ringBtn" title="6-member ring (hold for other sizes)">
+                        <svg class="tool-icon" viewBox="0 0 32 32" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="16,5 25.53,10.5 25.53,21.5 16,27 6.47,21.5 6.47,10.5"/></svg>
+                        <span class="expand-indicator">▼</span>
+                    </button>
+                    <div class="expanded-menu" id="ringMenu">
+                        <div class="expanded-menu-item icon-only" data-ring="6" title="6-member ring (6)" aria-label="6-member ring"><svg class="menu-icon" viewBox="0 0 32 32" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="16,4 26.39,10 26.39,22 16,28 5.61,22 5.61,10" fill="none"/></svg></div>
+                        <div class="expanded-menu-item icon-only" data-ring="5" title="5-member ring (5)" aria-label="5-member ring"><svg class="menu-icon" viewBox="0 0 32 32" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="16,5.5 27.41,13.79 23.05,27.21 8.95,27.21 4.59,13.79" fill="none"/></svg></div>
+                        <div class="expanded-menu-item icon-only" data-ring="4" title="4-member ring (4)" aria-label="4-member ring"><svg class="menu-icon" viewBox="0 0 32 32" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="24.56,7.44 24.56,24.56 7.44,24.56 7.44,7.44" fill="none"/></svg></div>
+                        <div class="expanded-menu-item icon-only" data-ring="7" title="7-member ring (7)" aria-label="7-member ring"><svg class="menu-icon" viewBox="0 0 32 32" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="16,4 25.38,8.52 27.7,18.67 21.21,26.81 10.79,26.81 4.3,18.67 6.62,8.52" fill="none"/></svg></div>
+                        <div class="expanded-menu-item icon-only" data-ring="3" title="3-member ring" aria-label="3-member ring"><svg class="menu-icon" viewBox="0 0 32 32" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="16,6.5 25.53,23 6.47,23" fill="none"/></svg></div>
+                        <div class="expanded-menu-item icon-only" data-ring="8" title="8-member ring (8)" aria-label="8-member ring"><svg class="menu-icon" viewBox="0 0 32 32" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="16,4 24.49,7.51 28,16 24.49,24.49 16,28 7.51,24.49 4,16 7.51,7.51" fill="none"/></svg></div>
+                    </div>
+                </div>
+
+                <!-- 3. Aromatic rings -->
+                <div class="template-group" style="position: relative;">
+                    <button class="template-btn" id="aromaticBtn" title="Benzene (hold for other aromatic rings)">
+                        <svg class="tool-icon" viewBox="0 0 32 32" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="16,5 25.53,10.5 25.53,21.5 16,27 6.47,21.5 6.47,10.5"/><line x1="17.05" y1="9.01" x2="21.53" y2="11.59"/><line x1="21.53" y1="20.41" x2="17.05" y2="22.99"/><line x1="9.42" y1="18.58" x2="9.42" y2="13.42"/></svg>
+                        <span class="expand-indicator">▼</span>
+                    </button>
+                    <div class="expanded-menu" id="aromaticMenu">
+                        <div class="expanded-menu-item icon-only" data-aromatic="6" title="6-member aromatic ring (benzene) (B)" aria-label="6-member aromatic ring (benzene)"><svg class="menu-icon" viewBox="0 0 32 32" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="16,4 26.39,10 26.39,22 16,28 5.61,22 5.61,10" fill="none"/><line x1="17.13" y1="8.49" x2="21.94" y2="11.27"/><line x1="21.94" y1="20.73" x2="17.13" y2="23.51"/><line x1="8.93" y1="18.77" x2="8.93" y2="13.23"/></svg></div>
+                        <div class="expanded-menu-item icon-only" data-aromatic="5" title="5-member aromatic ring (A)" aria-label="5-member aromatic ring"><svg class="menu-icon" viewBox="0 0 32 32" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="16,5.5 27.41,13.79 23.05,27.21 8.95,27.21 4.59,13.79" fill="none"/><line x1="23.29" y1="16.44" x2="21.27" y2="22.64"/><line x1="10.73" y1="22.64" x2="8.71" y2="16.44"/></svg></div>
+                    </div>
+                </div>
+
+                <!-- 7. Oxygen -->
+                <div class="template-group">
+                    <button class="template-btn" id="oxygenBtn" title="Oxygen">
+                        <span>O</span>
+                    </button>
+                </div>
+
+                <!-- 8. Nitrogen -->
+                <div class="template-group">
+                    <button class="template-btn" id="nitrogenBtn" title="Nitrogen">
+                        <span>N</span>
+                    </button>
+                </div>
+
+                <!-- 9. Halogens -->
+                <div class="template-group" style="position: relative;">
+                    <button class="template-btn" id="halogenBtn" title="Chlorine (hold for other halogens)">
+                        <span>Cl</span>
+                        <span class="expand-indicator">▼</span>
+                    </button>
+                    <div class="expanded-menu" id="halogenMenu">
+                        <div class="expanded-menu-item element-item" data-halogen="F" title="Fluorine" aria-label="Fluorine">F</div>
+                        <div class="expanded-menu-item element-item" data-halogen="Cl" title="Chlorine" aria-label="Chlorine">Cl</div>
+                        <div class="expanded-menu-item element-item" data-halogen="Br" title="Bromine" aria-label="Bromine">Br</div>
+                        <div class="expanded-menu-item element-item" data-halogen="I" title="Iodine" aria-label="Iodine">I</div>
+                    </div>
+                </div>
+
+                <!-- 9b. Text on an atom (functional groups: NO2, COOH, ...) -->
+                <div class="template-group">
+                    <button class="template-btn" id="textBtn" title="Text: write a group on an atom (NO2, COOH, CF3, OMe…)">
+                        <span style="font-family: Georgia, 'Times New Roman', serif;">T</span>
+                    </button>
+                </div>
+
+                <!-- 10. Periodic Table -->
+                <div class="template-group">
+                    <button class="template-btn" id="periodicBtn" title="Periodic table: pick any element">
+                        <svg class="tool-icon" viewBox="0 0 30.1 27.9" width="32" height="30" fill="currentColor" aria-hidden="true"><rect x="1.0" y="1.0" width="2.9" height="2.9" rx="0.4"/><rect x="26.2" y="1.0" width="2.9" height="2.9" rx="0.4"/><rect x="1.0" y="4.6" width="2.9" height="2.9" rx="0.4"/><rect x="4.6" y="4.6" width="2.9" height="2.9" rx="0.4"/><rect x="19.0" y="4.6" width="2.9" height="2.9" rx="0.4"/><rect x="22.6" y="4.6" width="2.9" height="2.9" rx="0.4"/><rect x="26.2" y="4.6" width="2.9" height="2.9" rx="0.4"/><rect x="1.0" y="8.2" width="2.9" height="2.9" rx="0.4"/><rect x="4.6" y="8.2" width="2.9" height="2.9" rx="0.4"/><rect x="19.0" y="8.2" width="2.9" height="2.9" rx="0.4"/><rect x="22.6" y="8.2" width="2.9" height="2.9" rx="0.4"/><rect x="26.2" y="8.2" width="2.9" height="2.9" rx="0.4"/><rect x="1.0" y="11.8" width="2.9" height="2.9" rx="0.4"/><rect x="4.6" y="11.8" width="2.9" height="2.9" rx="0.4"/><rect x="19.0" y="11.8" width="2.9" height="2.9" rx="0.4"/><rect x="22.6" y="11.8" width="2.9" height="2.9" rx="0.4"/><rect x="26.2" y="11.8" width="2.9" height="2.9" rx="0.4"/><rect x="1.0" y="15.4" width="2.9" height="2.9" rx="0.4"/><rect x="4.6" y="15.4" width="2.9" height="2.9" rx="0.4"/><rect x="19.0" y="15.4" width="2.9" height="2.9" rx="0.4"/><rect x="22.6" y="15.4" width="2.9" height="2.9" rx="0.4"/><rect x="26.2" y="15.4" width="2.9" height="2.9" rx="0.4"/><rect x="8.2" y="8.2" width="2.9" height="2.9" rx="0.4"/><rect x="11.8" y="8.2" width="2.9" height="2.9" rx="0.4"/><rect x="15.4" y="8.2" width="2.9" height="2.9" rx="0.4"/><rect x="8.2" y="11.8" width="2.9" height="2.9" rx="0.4"/><rect x="11.8" y="11.8" width="2.9" height="2.9" rx="0.4"/><rect x="15.4" y="11.8" width="2.9" height="2.9" rx="0.4"/><rect x="8.2" y="15.4" width="2.9" height="2.9" rx="0.4"/><rect x="11.8" y="15.4" width="2.9" height="2.9" rx="0.4"/><rect x="15.4" y="15.4" width="2.9" height="2.9" rx="0.4"/><rect x="6.4" y="20.4" width="2.9" height="2.9" rx="0.4"/><rect x="10.0" y="20.4" width="2.9" height="2.9" rx="0.4"/><rect x="13.6" y="20.4" width="2.9" height="2.9" rx="0.4"/><rect x="17.2" y="20.4" width="2.9" height="2.9" rx="0.4"/><rect x="20.8" y="20.4" width="2.9" height="2.9" rx="0.4"/><rect x="6.4" y="24.0" width="2.9" height="2.9" rx="0.4"/><rect x="10.0" y="24.0" width="2.9" height="2.9" rx="0.4"/><rect x="13.6" y="24.0" width="2.9" height="2.9" rx="0.4"/><rect x="17.2" y="24.0" width="2.9" height="2.9" rx="0.4"/><rect x="20.8" y="24.0" width="2.9" height="2.9" rx="0.4"/></svg>
+                    </button>
+                </div>
+                <!-- 11. Reaction arrows: reaction (default), equilibrium, two-way, retrosynthesis -->
+                <div class="template-group" style="position: relative;">
+                    <button class="template-btn" id="arrowBtn" title="Reaction arrow (hold for other arrows)">
+                        <svg class="tool-icon" viewBox="0 0 32 32" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 16h18"/><path d="M28 16l-7.5-4.5 1.8 4.5-1.8 4.5z" fill="currentColor"/></svg>
+                        <span class="expand-indicator">▼</span>
+                    </button>
+                    <div class="expanded-menu" id="arrowMenu">
+                        <div class="expanded-menu-item icon-only" data-arrow="forward" title="Reaction arrow" aria-label="Reaction arrow"><svg class="menu-icon" viewBox="0 0 32 32" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 16h18"/><path d="M28 16l-7.5-4.5 1.8 4.5-1.8 4.5z" fill="currentColor"/></svg></div>
+                        <div class="expanded-menu-item icon-only" data-arrow="equilibrium" title="Equilibrium arrow" aria-label="Equilibrium arrow"><svg class="menu-icon" viewBox="0 0 32 32" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12.5h20"/><path d="M28 12.5l-7.5-4 1.5 4z" fill="currentColor"/><path d="M28 19.5H8"/><path d="M4 19.5l7.5 4-1.5-4z" fill="currentColor"/></svg></div>
+                        <div class="expanded-menu-item icon-only" data-arrow="both" title="Two-way arrow (resonance)" aria-label="Two-way arrow (resonance)"><svg class="menu-icon" viewBox="0 0 32 32" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 16h14"/><path d="M28 16l-7.5-4.5 1.8 4.5-1.8 4.5z" fill="currentColor"/><path d="M4 16l7.5-4.5-1.8 4.5 1.8 4.5z" fill="currentColor"/></svg></div>
+                        <div class="expanded-menu-item icon-only" data-arrow="retro" title="Retrosynthesis arrow" aria-label="Retrosynthesis arrow"><svg class="menu-icon" viewBox="0 0 32 32" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12.5h19M4 19.5h19"/><path d="M20 7l8 9-8 9"/></svg></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Canvas Area -->
+            <div class="main-content">
+                <div class="canvas-area">
+                    <canvas id="drawingCanvas" width="1200" height="700"></canvas>
+                </div>
+
+                <!-- Ask AI panel: Claude, ChatGPT or Grok -->
+                <div class="claude-panel" id="claudePanel">
+                    <div class="claude-header">
+                        <span class="claude-title">✨ Ask</span>
+                        <div class="ai-switch" id="aiProvider" role="radiogroup" aria-label="AI assistant">
+                            <button type="button" role="radio" data-provider="claude">Claude</button>
+                            <button type="button" role="radio" data-provider="openai">ChatGPT</button>
+                            <button type="button" role="radio" data-provider="grok">Grok</button>
+                        </div>
+                        <span class="claude-sub">chemistry questions · “Draw aspirin” puts the structure on the canvas</span>
+                        <span class="claude-spacer"></span>
+                        <select id="claudeModel" title="Model"></select>
+                        <button class="claude-small-btn" id="claudeClear" title="Start a new conversation">Clear</button>
+                        <button class="claude-small-btn" id="claudeToggle" title="Show or hide the panel">▾</button>
+                    </div>
+                    <div class="claude-body">
+                        <div class="claude-messages" id="claudeMessages">
+                            <div class="claude-hint">Ask about chemistry, e.g. “Draw aspirin”, “Show me the structure of ibuprofen”, or “What functional groups does this have?” (the current drawing is sent along).</div>
+                        </div>
+                        <form class="claude-input" id="claudeForm">
+                            <textarea id="claudeInput" rows="2" placeholder="Ask Claude…  (Enter to send, Shift+Enter for a new line)"></textarea>
+                            <button type="submit" id="claudeSend">Send</button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Status Bar -->
+                <div class="status-bar">
+                    <div class="status-item">
+                        <span class="status-indicator"></span>
+                        <span id="atomCount">Atoms: 0</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-indicator"></span>
+                        <span id="bondCount">Bonds: 0</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-indicator"></span>
+                        <span id="coordinates">Cursor: (0, 0)</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-indicator"></span>
+                        <span id="formula">Formula: —</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-indicator"></span>
+                        <span id="mode">Mode: Select</span>
+                    </div>
+                    <div class="status-item">
+                        <span id="desktopStatus" style="color: #2e8b57; font-weight: 600;"></span>
+                    </div>
+                    <div class="status-item">
+                        <span id="valenceCheck" style="color: #FF0000; font-weight: 600;"></span>
+                    </div>
+                    <div class="status-item">
+                        <span id="hint"></span>
+                    </div>
+                    <div class="status-item">
+                        <span id="notice" style="color: #c0392b;"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Text box for the T tool, placed over the atom being written on -->
+    <input type="text" id="atomTextInput" autocomplete="off" spellcheck="false" placeholder="e.g. NO2" aria-label="Atom text">
+
+    <input type="file" id="fileInput" accept=".json,application/json" style="display: none;">
+
+    <!-- Periodic Table Modal -->
+
+    <!-- Settings (File › Settings, Ctrl+,): rows are built by src/app/settingsPanel.ts -->
+    <div class="settings-backdrop" id="settingsModal" hidden>
+        <div class="settings-dialog" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+            <nav class="settings-nav" role="tablist" aria-orientation="vertical">
+                <h2 class="settings-title" id="settingsTitle">Settings</h2>
+                <button class="settings-tab active" role="tab" data-tab="drawing" aria-selected="true">Drawing</button>
+                <button class="settings-tab" role="tab" data-tab="ai" aria-selected="false" tabindex="-1">AI</button>
+            </nav>
+            <div class="settings-main">
+                <button class="settings-close" id="settingsClose" title="Close (Esc)" aria-label="Close"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+                <section class="settings-pane" data-pane="drawing" role="tabpanel">
+                    <h3 class="settings-heading">Drawing</h3>
+                    <p class="settings-intro">How molecules are drawn. Changes apply at once and are saved in this browser.</p>
+                    <div class="settings-rows" id="settingsDrawingRows"></div>
+                </section>
+                <section class="settings-pane" data-pane="ai" role="tabpanel" hidden>
+                    <h3 class="settings-heading">AI</h3>
+                    <p class="settings-intro">API keys for the Ask AI panel. A key entered here is kept in this browser only and is sent to the local dev server, which passes it on to the provider. Leave a field empty to use the key in <code>.env.local</code>.</p>
+                    <div class="settings-rows" id="settingsAiRows"></div>
+                </section>
+            </div>
+        </div>
+    </div>
+
+    <div id="periodicModal" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 24px; border-radius: 8px; box-shadow: 0 8px 32px rgba(0,0,0,0.2); z-index: 2000; max-height: 90vh; max-width: 95vw; overflow: auto;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h2 style="margin: 0; color: #333;">Select Element</h2>
+            <button id="periodicCloseBtn" style="background: none; border: none; font-size: 24px; cursor: pointer;">✕</button>
+        </div>
+
+        <div id="periodicTable" class="periodic-grid">
+            <!-- Generated by JavaScript -->
+        </div>
+    </div>
+
+    <script type="module" src="/src/app/main.ts"></script>
+</body>
+</html>

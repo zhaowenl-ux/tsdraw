@@ -1,0 +1,279 @@
+/**
+ * The Help menu's dialog: one window with three kinds of page.
+ *   Quick tutorial — a few steps to draw a first molecule, and the handiest tips.
+ *   Help           — the full guide, one topic per tab.
+ *   About          — version, build and license.
+ * Built here from data, so the help text lives next to the code it describes.
+ */
+import { APP_BUILD, APP_LICENSE, APP_VERSION } from './version';
+
+export type HelpPage = 'tutorial' | 'help' | 'about';
+
+export interface HelpDialog {
+  open(page: HelpPage): void;
+  close(): void;
+  isOpen(): boolean;
+}
+
+/** A help topic: a title and its body (trusted, static HTML written below). */
+interface Topic {
+  id: string;
+  title: string;
+  html: string;
+}
+
+const kbd = (k: string) => `<kbd>${k}</kbd>`;
+
+const TUTORIAL = `
+<h3 class="settings-heading">Quick tutorial</h3>
+<p class="settings-intro">Draw your first molecule in under a minute.</p>
+<ol class="help-steps">
+  <li><b>Draw a chain.</b> The single-bond tool is on at start. Click on the canvas, then keep clicking: each click adds the next bond. ${kbd('Esc')} ends the chain.</li>
+  <li><b>Add a ring.</b> Press ${kbd('B')} for benzene (or ${kbd('4')}–${kbd('8')} for a 4- to 8-membered ring) and click an atom: the ring attaches to it. Keep the button held and drag to turn it; release to settle it.</li>
+  <li><b>Change bonds.</b> Press ${kbd('2')} and click an existing bond to make it double, ${kbd('3')} for triple.</li>
+  <li><b>Change atoms.</b> Pick <b>O</b>, <b>N</b> or a halogen from the toolbar (or any element from the periodic table) and click an atom.</li>
+  <li><b>Tidy up.</b> <b>Clean up</b> in the top bar straightens the layout. ${kbd('Ctrl+Z')} undoes anything.</li>
+  <li><b>Take it with you.</b> ${kbd('Ctrl+C')} copies the drawing as a MOL file; <b>Save as</b> writes SMILES or MOL; <b>PNG</b> exports an image.</li>
+</ol>
+<h3 class="settings-heading help-gap">Handy tips</h3>
+<ul class="help-list">
+  <li>Every tool has a one-key shortcut: ${kbd('1')}–${kbd('3')} bonds, ${kbd('4')}–${kbd('8')} rings, ${kbd('9')} / ${kbd('0')} wedge / hashed bond, ${kbd('A')} aromatic 5-ring, ${kbd('B')} benzene.</li>
+  <li>Press and hold a toolbar button with a small ▾ to see more tools of that kind.</li>
+  <li>Hold ${kbd('Shift')} while turning a ring or drawing an arrow to snap the angle.</li>
+  <li>Use the <b>T</b> tool to type a group such as NO2, COOH or OMe on an atom; <b>Expand</b> turns it into real atoms.</li>
+  <li>Paste a SMILES or MOL file with ${kbd('Ctrl+V')}.</li>
+  <li>Ask the AI panel “Draw aspirin” to put a structure on the canvas.</li>
+</ul>
+<p class="settings-intro help-gap">Everything else is in <a href="#" data-help-goto="help">Help</a>.</p>
+`;
+
+const TOPICS: Topic[] = [
+  {
+    id: 'bonds',
+    title: 'Bonds and chains',
+    html: `
+<p>Pick a bond tool from the bond button (hold it for single, double, triple, wedge, hashed and wavy bonds) or press its key.</p>
+<ul class="help-list">
+  <li><b>Click empty space</b> to start a chain; each further click adds a bond from the last atom. ${kbd('Esc')} stops the chain.</li>
+  <li><b>Press an atom</b> to grow a new bond from it at once; drag before releasing to swing it around the atom.</li>
+  <li><b>Click an existing bond</b> to change it to the current bond type.</li>
+  <li><b>Stereo bonds:</b> wedge (${kbd('9')}) points toward the viewer, hashed (${kbd('0')}) away from it, wavy means unspecified. The narrow end sits on the stereocentre — the atom you start from.</li>
+</ul>`,
+  },
+  {
+    id: 'rings',
+    title: 'Rings',
+    html: `
+<p>Saturated rings of 3 to 8 atoms are under the ring button; aromatic rings (benzene and the 5-membered ring) under the aromatic button.</p>
+<ul class="help-list">
+  <li><b>Click empty space</b> to place a free ring.</li>
+  <li><b>Press on or next to an atom</b> to attach a ring there. It is drawn grey while the button is held: drag to turn it around the atom (${kbd('Shift')}: 30° steps), release to settle it, ${kbd('Esc')} to take it back.</li>
+  <li><b>Click a bond</b> to fuse a ring onto it.</li>
+  <li>Ring corners that land on existing atoms merge with them.</li>
+</ul>`,
+  },
+  {
+    id: 'atoms',
+    title: 'Atoms and labels',
+    html: `
+<ul class="help-list">
+  <li><b>O</b>, <b>N</b> and the halogen button (hold it for F, Cl, Br, I) set the atom tool. Click empty space to add the atom, or an atom to change its element.</li>
+  <li>The <b>periodic table</b> button opens every element.</li>
+  <li>The <b>T</b> (text) tool writes a group on an atom: NO2, COOH, CF3, OMe, … ${kbd('Enter')} applies, ${kbd('Esc')} cancels.</li>
+  <li><b>Expand</b> (top bar, or Structure › Expand labels) turns those labels into atoms and bonds — the selected ones, or all.</li>
+  <li>Atoms with an impossible valence are flagged; the status bar says what is wrong.</li>
+</ul>`,
+  },
+  {
+    id: 'select',
+    title: 'Selecting and moving',
+    html: `
+<ul class="help-list">
+  <li>The select button has a <b>lasso</b> and a <b>rectangle</b>. Drag around atoms (and arrows) to select them.</li>
+  <li>Drag a selection to move it; ${kbd('Delete')} or ${kbd('Backspace')} removes it.</li>
+  <li>With any tool, press an atom or bond and drag to <b>rotate</b> the whole connected piece about its centre.</li>
+  <li><b>Clean up</b> recomputes a tidy 2D layout and keeps the orientation as close to yours as it can.</li>
+</ul>`,
+  },
+  {
+    id: 'arrows',
+    title: 'Reaction arrows',
+    html: `
+<ul class="help-list">
+  <li>The arrow button holds reaction, equilibrium, two-way (resonance) and retrosynthesis arrows.</li>
+  <li>Drag to draw an arrow (${kbd('Shift')}: 15° steps), or click for one of standard length.</li>
+  <li>With the select tool, drag an arrow to move it, or drag one of its ends to stretch it.</li>
+</ul>`,
+  },
+  {
+    id: 'files',
+    title: 'Files and clipboard',
+    html: `
+<ul class="help-list">
+  <li><b>Save</b> writes a tsdraw JSON file, which <b>Open</b> reads back with everything intact.</li>
+  <li><b>Save as</b> writes SMILES (.smi) or a MOL file (.mol).</li>
+  <li>${kbd('Ctrl+C')} copies the selection — or the whole drawing — as a MOL file; the Copy menu also offers SMILES.</li>
+  <li>${kbd('Ctrl+V')} pastes a MOL file or a SMILES string, laid out automatically.</li>
+  <li><b>PNG</b> saves an image of the drawing.</li>
+  <li><b>New</b> starts an empty drawing; <b>Clear</b> empties the canvas (${kbd('Ctrl+Z')} brings it back).</li>
+</ul>`,
+  },
+  {
+    id: 'ai',
+    title: 'AI assistant',
+    html: `
+<ul class="help-list">
+  <li>The panel under the canvas talks to Claude, ChatGPT or Grok. Pick one with the buttons and a model from the list.</li>
+  <li>Ask chemistry questions about what you drew — the current drawing is sent along — or ask it to draw something: “Draw ibuprofen”.</li>
+  <li>${kbd('Enter')} sends, ${kbd('Shift+Enter')} starts a new line, <b>Clear</b> starts a new conversation. View › Show / hide AI panel folds it away.</li>
+  <li>Each provider needs an API key: enter it in File › Settings › AI, or put it in <code>.env.local</code> for the dev server.</li>
+</ul>`,
+  },
+  {
+    id: 'settings',
+    title: 'Settings',
+    html: `
+<p>File › Settings (${kbd('Ctrl+,')}) has two pages:</p>
+<ul class="help-list">
+  <li><b>Drawing</b> — bond length, line width, label font, double-bond spacing, wedge width, bond colour and grid. Changes apply at once.</li>
+  <li><b>AI</b> — API keys for Claude, ChatGPT and Grok, with a button to test each.</li>
+</ul>
+<p>Settings are kept in this browser.</p>`,
+  },
+  {
+    id: 'keys',
+    title: 'Keyboard shortcuts',
+    html: `
+<table class="help-keys">
+  <tr><th colspan="2">Tools</th></tr>
+  <tr><td>${kbd('1')} ${kbd('2')} ${kbd('3')}</td><td>Single, double, triple bond</td></tr>
+  <tr><td>${kbd('4')} … ${kbd('8')}</td><td>4- to 8-membered ring</td></tr>
+  <tr><td>${kbd('9')}</td><td>Wedge bond (up)</td></tr>
+  <tr><td>${kbd('0')}</td><td>Hashed bond (down)</td></tr>
+  <tr><td>${kbd('A')}</td><td>Aromatic 5-membered ring</td></tr>
+  <tr><td>${kbd('B')}</td><td>Benzene</td></tr>
+  <tr><th colspan="2">Editing</th></tr>
+  <tr><td>${kbd('Ctrl+Z')}</td><td>Undo</td></tr>
+  <tr><td>${kbd('Ctrl+Y')} / ${kbd('Ctrl+Shift+Z')}</td><td>Redo</td></tr>
+  <tr><td>${kbd('Ctrl+C')}</td><td>Copy as MOL file</td></tr>
+  <tr><td>${kbd('Ctrl+V')}</td><td>Paste MOL file or SMILES</td></tr>
+  <tr><td>${kbd('Delete')} / ${kbd('Backspace')}</td><td>Delete the selection</td></tr>
+  <tr><td>${kbd('Esc')}</td><td>Stop the chain, clear the selection, cancel a held ring, close menus</td></tr>
+  <tr><td>${kbd('Shift')} (while dragging)</td><td>Snap ring turns to 30°, arrows to 15°</td></tr>
+  <tr><th colspan="2">App</th></tr>
+  <tr><td>${kbd('Ctrl+,')}</td><td>Settings</td></tr>
+  <tr><td>${kbd('F1')}</td><td>Help</td></tr>
+</table>
+<p class="settings-intro help-gap">On a Mac, use ${kbd('⌘')} instead of ${kbd('Ctrl')}. One-key shortcuts are ignored while you type in a text box.</p>`,
+  },
+];
+
+function escapeHtml(text: string): string {
+  return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function aboutHtml(): string {
+  return `
+<h3 class="settings-heading">About TSDraw</h3>
+<p class="settings-intro">A chemical structure drawing application written in TypeScript.</p>
+<table class="help-about">
+  <tr><td>Version</td><td>${APP_VERSION}</td></tr>
+  <tr><td>Build</td><td>${APP_BUILD}</td></tr>
+  <tr><td>License</td><td>${APP_LICENSE.name}</td></tr>
+  <tr><td>Copyright</td><td>${APP_LICENSE.copyright}</td></tr>
+</table>
+<p class="help-gap help-notice">${escapeHtml(APP_LICENSE.notice).replace(/\n\n/g, '</p><p class="help-notice">')}</p>
+<details class="help-gap">
+  <summary>Show the full license text</summary>
+  <pre class="help-license">${escapeHtml(APP_LICENSE.text)}</pre>
+</details>`;
+}
+
+export function initHelpDialog(): HelpDialog {
+  const modal = document.createElement('div');
+  modal.className = 'settings-backdrop';
+  modal.id = 'helpModal';
+  modal.hidden = true;
+  modal.innerHTML = `
+<div class="settings-dialog help-dialog" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+  <nav class="settings-nav" role="tablist" aria-orientation="vertical">
+    <h2 class="settings-title" id="helpTitle">Help</h2>
+    <button class="settings-tab" role="tab" data-help-tab="tutorial">Quick tutorial</button>
+    <div class="help-nav-label">Guide</div>
+    ${TOPICS.map((t) => `<button class="settings-tab help-subtab" role="tab" data-help-tab="${t.id}">${t.title}</button>`).join('')}
+    <div class="help-nav-spacer"></div>
+    <button class="settings-tab" role="tab" data-help-tab="about">About</button>
+  </nav>
+  <div class="settings-main">
+    <button class="settings-close" title="Close (Esc)" aria-label="Close"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+    <section class="settings-pane help-pane" role="tabpanel"></section>
+  </div>
+</div>`;
+  document.body.appendChild(modal);
+
+  const pane = modal.querySelector<HTMLElement>('.help-pane')!;
+  const main = modal.querySelector<HTMLElement>('.settings-main')!;
+  const tabs = [...modal.querySelectorAll<HTMLButtonElement>('[data-help-tab]')];
+  let lastFocus: HTMLElement | null = null;
+
+  function show(id: string): void {
+    if (id === 'help') id = TOPICS[0].id;
+    for (const tab of tabs) {
+      const active = tab.dataset.helpTab === id;
+      tab.classList.toggle('active', active);
+      tab.setAttribute('aria-selected', String(active));
+      tab.tabIndex = active ? 0 : -1;
+    }
+    if (id === 'tutorial') pane.innerHTML = TUTORIAL;
+    else if (id === 'about') pane.innerHTML = aboutHtml();
+    else {
+      const topic = TOPICS.find((t) => t.id === id) ?? TOPICS[0];
+      pane.innerHTML = `<h3 class="settings-heading">${topic.title}</h3><div class="help-body">${topic.html}</div>`;
+    }
+    main.scrollTop = 0;
+  }
+
+  const dialog: HelpDialog = {
+    open(page) {
+      if (modal.hidden) lastFocus = document.activeElement as HTMLElement | null;
+      show(page);
+      modal.hidden = false;
+      tabs.find((t) => t.classList.contains('active'))?.focus();
+    },
+    close() {
+      if (modal.hidden) return;
+      if (modal.contains(document.activeElement)) (document.activeElement as HTMLElement).blur();
+      modal.hidden = true;
+      if (lastFocus && lastFocus !== document.body && document.contains(lastFocus)) lastFocus.focus();
+    },
+    isOpen: () => !modal.hidden,
+  };
+
+  for (const tab of tabs) tab.addEventListener('click', () => show(tab.dataset.helpTab!));
+  pane.addEventListener('click', (e) => {
+    const link = (e.target as HTMLElement).closest<HTMLElement>('[data-help-goto]');
+    if (!link) return;
+    e.preventDefault();
+    show(link.dataset.helpGoto!);
+  });
+  modal.querySelector('.settings-close')!.addEventListener('click', () => dialog.close());
+  modal.addEventListener('mousedown', (e) => {
+    if (e.target === modal) dialog.close();
+  });
+  modal.addEventListener('keydown', (e) => {
+    e.stopPropagation(); // keep editor shortcuts out of the dialog
+    if (e.key === 'Escape') dialog.close();
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      const i = tabs.indexOf(document.activeElement as HTMLButtonElement);
+      if (i < 0) return;
+      e.preventDefault();
+      const next = tabs[(i + (e.key === 'ArrowDown' ? 1 : tabs.length - 1)) % tabs.length];
+      show(next.dataset.helpTab!);
+      next.focus();
+    }
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && dialog.isOpen()) dialog.close();
+  });
+  return dialog;
+}
