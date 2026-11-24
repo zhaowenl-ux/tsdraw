@@ -1,0 +1,35 @@
+{
+ "molecules": [
+  {
+   "molecule_chembl_id": "CHEMBL2296002",
+   "molecule_structures": {
+    "canonical_smiles": "CC(=O)Oc1ccccc1C(=O)O.NCCCC[C@H](N)C(=O)O"
+   },
+   "pref_name": null,
+   "similarity": "100"
+  },
+  {
+   "molecule_chembl_id": "CHEMBL1697753",
+   "molecule_structures": {
+    "canonical_smiles": "CC(=O)Oc1ccccc1C(=O)O.NCCCCC(N)C(=O)O"
+   },
+   "pref_name": "ASPIRIN DL-LYSINE",
+   "similarity": "100"
+  },
+  {
+   "molecule_chembl_id": "CHEMBL25",
+   "molecule_structures": {
+    "canonical_smiles": "CC(=O)Oc1ccccc1C(=O)O"
+   },
+   "pref_name": "ASPIRIN",
+   "similarity": "100"
+  }
+ ],
+ "page_meta": {
+  "limit": 3,
+  "next": "/chembl/api/data/similarity.json?limit=3&offset=3&smiles=CC%28%3DO%29Oc1ccccc1C%28%3DO%29O&similarity=80&only=molecule_chembl_id%2Cpref_name%2Csimilarity%2Cmolecule_structures",
+  "offset": 0,
+  "previous": null,
+  "total_count": 6
+ }
+}

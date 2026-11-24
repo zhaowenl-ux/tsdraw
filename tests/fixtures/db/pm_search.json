@@ -1,0 +1,23 @@
+{
+ "header": {
+  "type": "esearch",
+  "version": "0.3"
+ },
+ "esearchresult": {
+  "count": "19850",
+  "retmax": "3",
+  "retstart": "0",
+  "idlist": [
+   "12122963",
+   "28273011",
+   "38772691"
+  ],
+  "translationset": [
+   {
+    "from": "imatinib",
+    "to": "\"imatinib mesylate\"[Supplementary Concept] OR \"imatinib mesylate\"[All Fields] OR \"imatinib\"[All Fields] OR \"imatinib mesylate\"[MeSH Terms] OR (\"imatinib\"[All Fields] AND \"mesylate\"[All Fields]) OR \"imatinib's\"[All Fields]"
+   }
+  ],
+  "querytranslation": "\"imatinib mesylate\"[Supplementary Concept] OR \"imatinib mesylate\"[All Fields] OR \"imatinib\"[All Fields] OR \"imatinib mesylate\"[MeSH Terms] OR (\"imatinib\"[All Fields] AND \"mesylate\"[All Fields]) OR \"imatinib s\"[All Fields]"
+ }
+}

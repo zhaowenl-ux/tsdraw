@@ -1,0 +1,41 @@
+{
+ "PropertyTable": {
+  "Properties": [
+   {
+    "CID": 3034034,
+    "MolecularFormula": "C20H24N2O2",
+    "MolecularWeight": "324.4",
+    "SMILES": "COC1=CC2=C(C=CN=C2C=C1)[C@H]([C@@H]3C[C@@H]4CCN3C[C@@H]4C=C)O",
+    "Title": "Quinine"
+   },
+   {
+    "CID": 2719,
+    "MolecularFormula": "C18H26ClN3",
+    "MolecularWeight": "319.9",
+    "SMILES": "CCN(CC)CCCC(C)NC1=C2C=CC(=CC2=NC=C1)Cl",
+    "Title": "Chloroquine"
+   },
+   {
+    "CID": 4046,
+    "MolecularFormula": "C17H16F6N2O",
+    "MolecularWeight": "378.31",
+    "SMILES": "C1CCNC(C1)C(C2=CC(=NC3=C2C=CC=C3C(F)(F)F)C(F)(F)F)O",
+    "Title": "Mefloquine"
+   },
+   {
+    "CID": 60700,
+    "MolecularFormula": "C23H23N3O5",
+    "MolecularWeight": "421.4",
+    "SMILES": "CC[C@@]1(C2=C(COC1=O)C(=O)N3CC4=CC5=C(C=CC(=C5CN(C)C)O)N=C4C3=C2)O",
+    "Title": "Topotecan"
+   },
+   {
+    "CID": 60838,
+    "MolecularFormula": "C33H38N4O6",
+    "MolecularWeight": "586.7",
+    "SMILES": "CCC1=C2CN3C(=CC4=C(C3=O)COC(=O)[C@@]4(CC)O)C2=NC5=C1C=C(C=C5)OC(=O)N6CCC(CC6)N7CCCCC7",
+    "Title": "Irinotecan"
+   }
+  ]
+ }
+}

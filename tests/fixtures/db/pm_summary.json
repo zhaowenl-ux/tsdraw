@@ -1,0 +1,289 @@
+{
+ "header": {
+  "type": "esummary",
+  "version": "0.3"
+ },
+ "result": {
+  "uids": [
+   "12122963",
+   "28273011",
+   "38772691"
+  ],
+  "12122963": {
+   "uid": "12122963",
+   "pubdate": "2002",
+   "epubdate": "",
+   "source": "Rev Gastroenterol Disord",
+   "authors": [
+    {
+     "name": "Baker DE",
+     "authtype": "Author",
+     "clusterid": ""
+    }
+   ],
+   "lastauthor": "Baker DE",
+   "title": "Imatinib mesylate.",
+   "sorttitle": "imatinib mesylate",
+   "volume": "2",
+   "issue": "2",
+   "pages": "75-86",
+   "lang": [
+    "eng"
+   ],
+   "nlmuniqueid": "101140143",
+   "issn": "1533-001X",
+   "essn": "",
+   "pubtype": [
+    "Journal Article",
+    "Review"
+   ],
+   "recordstatus": "PubMed - indexed for MEDLINE",
+   "pubstatus": "4",
+   "articleids": [
+    {
+     "idtype": "pubmed",
+     "idtypen": 1,
+     "value": "12122963"
+    }
+   ],
+   "history": [
+    {
+     "pubstatus": "pubmed",
+     "date": "2002/07/19 10:00"
+    },
+    {
+     "pubstatus": "medline",
+     "date": "2002/08/10 10:01"
+    },
+    {
+     "pubstatus": "entrez",
+     "date": "2002/07/19 10:00"
+    }
+   ],
+   "references": [],
+   "attributes": [
+    "Has Abstract"
+   ],
+   "pmcrefcount": "",
+   "fulljournalname": "Reviews in gastroenterological disorders",
+   "elocationid": "",
+   "doctype": "citation",
+   "srccontriblist": [],
+   "booktitle": "",
+   "medium": "",
+   "edition": "",
+   "publisherlocation": "",
+   "publishername": "",
+   "srcdate": "",
+   "reportnumber": "",
+   "availablefromurl": "",
+   "locationlabel": "",
+   "doccontriblist": [],
+   "docdate": "",
+   "bookname": "",
+   "chapter": "",
+   "sortpubdate": "2002/01/01 00:00",
+   "sortfirstauthor": "Baker DE",
+   "vernaculartitle": ""
+  },
+  "28273011": {
+   "uid": "28273011",
+   "pubdate": "2017 Mar 9",
+   "epubdate": "",
+   "source": "N Engl J Med",
+   "authors": [
+    {
+     "name": "Longo DL",
+     "authtype": "Author",
+     "clusterid": ""
+    }
+   ],
+   "lastauthor": "Longo DL",
+   "title": "Imatinib Changed Everything.",
+   "sorttitle": "imatinib changed everything",
+   "volume": "376",
+   "issue": "10",
+   "pages": "982-983",
+   "lang": [
+    "eng"
+   ],
+   "nlmuniqueid": "0255562",
+   "issn": "0028-4793",
+   "essn": "1533-4406",
+   "pubtype": [
+    "Editorial",
+    "Comment"
+   ],
+   "recordstatus": "PubMed - indexed for MEDLINE",
+   "pubstatus": "4",
+   "articleids": [
+    {
+     "idtype": "pubmed",
+     "idtypen": 1,
+     "value": "28273011"
+    },
+    {
+     "idtype": "doi",
+     "idtypen": 3,
+     "value": "10.1056/NEJMe1700833"
+    }
+   ],
+   "history": [
+    {
+     "pubstatus": "entrez",
+     "date": "2017/03/09 06:00"
+    },
+    {
+     "pubstatus": "pubmed",
+     "date": "2017/03/09 06:00"
+    },
+    {
+     "pubstatus": "medline",
+     "date": "2017/03/11 06:00"
+    }
+   ],
+   "references": [
+    {
+     "refsource": "N Engl J Med. 2017 Mar 9;376(10):917-927. doi: 10.1056/NEJMoa1609324.",
+     "reftype": "Comment on",
+     "pmid": 28273028,
+     "note": ""
+    }
+   ],
+   "attributes": [],
+   "pmcrefcount": "",
+   "fulljournalname": "The New England journal of medicine",
+   "elocationid": "doi: 10.1056/NEJMe1700833",
+   "doctype": "citation",
+   "srccontriblist": [],
+   "booktitle": "",
+   "medium": "",
+   "edition": "",
+   "publisherlocation": "",
+   "publishername": "",
+   "srcdate": "",
+   "reportnumber": "",
+   "availablefromurl": "",
+   "locationlabel": "",
+   "doccontriblist": [],
+   "docdate": "",
+   "bookname": "",
+   "chapter": "",
+   "sortpubdate": "2017/03/09 00:00",
+   "sortfirstauthor": "Longo DL",
+   "vernaculartitle": ""
+  },
+  "38772691": {
+   "uid": "38772691",
+   "pubdate": "2024 Sep",
+   "epubdate": "2024 May 21",
+   "source": "J Oncol Pharm Pract",
+   "authors": [
+    {
+     "name": "Ma Z",
+     "authtype": "Author",
+     "clusterid": ""
+    },
+    {
+     "name": "Zhao J",
+     "authtype": "Author",
+     "clusterid": ""
+    },
+    {
+     "name": "Li S",
+     "authtype": "Author",
+     "clusterid": ""
+    },
+    {
+     "name": "Gao F",
+     "authtype": "Author",
+     "clusterid": ""
+    },
+    {
+     "name": "Zhang C",
+     "authtype": "Author",
+     "clusterid": ""
+    },
+    {
+     "name": "Wu L",
+     "authtype": "Author",
+     "clusterid": ""
+    },
+    {
+     "name": "Lin Y",
+     "authtype": "Author",
+     "clusterid": ""
+    }
+   ],
+   "lastauthor": "Lin Y",
+   "title": "Imatinib-induced ulcerative colitis.",
+   "sorttitle": "imatinib induced ulcerative colitis",
+   "volume": "30",
+   "issue": "6",
+   "pages": "1111-1117",
+   "lang": [
+    "eng"
+   ],
+   "nlmuniqueid": "9511372",
+   "issn": "1078-1552",
+   "essn": "1477-092X",
+   "pubtype": [
+    "Case Reports",
+    "Journal Article"
+   ],
+   "recordstatus": "PubMed - indexed for MEDLINE",
+   "pubstatus": "256",
+   "articleids": [
+    {
+     "idtype": "pubmed",
+     "idtypen": 1,
+     "value": "38772691"
+    },
+    {
+     "idtype": "doi",
+     "idtypen": 3,
+     "value": "10.1177/10781552241255290"
+    }
+   ],
+   "history": [
+    {
+     "pubstatus": "medline",
+     "date": "2024/10/11 00:33"
+    },
+    {
+     "pubstatus": "pubmed",
+     "date": "2024/05/22 01:40"
+    },
+    {
+     "pubstatus": "entrez",
+     "date": "2024/05/21 21:03"
+    }
+   ],
+   "references": [],
+   "attributes": [
+    "Has Abstract"
+   ],
+   "pmcrefcount": "",
+   "fulljournalname": "Journal of oncology pharmacy practice : official publication of the International Society of Oncology Pharmacy Practitioners",
+   "elocationid": "doi: 10.1177/10781552241255290",
+   "doctype": "citation",
+   "srccontriblist": [],
+   "booktitle": "",
+   "medium": "",
+   "edition": "",
+   "publisherlocation": "",
+   "publishername": "",
+   "srcdate": "",
+   "reportnumber": "",
+   "availablefromurl": "",
+   "locationlabel": "",
+   "doccontriblist": [],
+   "docdate": "",
+   "bookname": "",
+   "chapter": "",
+   "sortpubdate": "2024/09/01 00:00",
+   "sortfirstauthor": "Ma Z",
+   "vernaculartitle": ""
+  }
+ }
+}

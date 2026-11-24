@@ -110,12 +110,13 @@ export function layoutOrganic(
     const members: number[] = [];
 
     const componentRings = rings.filter((ring) => inComponent.has(ring[0]));
-    placeRings(componentRings, bondLength, originX, placed, members);
+    const usedRings = new Set<number[]>();
+    placeRings(componentRings, bondLength, originX, placed, members, usedRings);
     if (members.length === 0) {
       placed.set(atom.id, new Point2D(originX, 0));
       members.push(atom.id);
     }
-    placeBreadthFirst(members, adjacency, placed, bondLength, linearAtoms, chainAtoms);
+    placeBreadthFirst(members, adjacency, placed, bondLength, linearAtoms, chainAtoms, componentRings, usedRings);
     originX = maxX(placed) + 2 * bondLength;
   }
 
@@ -364,7 +365,8 @@ function placeRings(
   bondLength: number,
   originX: number,
   placed: Map<number, Point2D>,
-  members: number[]
+  members: number[],
+  used: Set<number[]> = new Set()
 ): void {
   if (rings.length === 0) return;
 
@@ -377,13 +379,26 @@ function placeRings(
     members.push(id);
   });
 
-  const used = new Set<number>([0]);
+  used.add(first);
+  growRingSystems(rings, used, bondLength, placed, members);
+}
+
+/**
+ * Place every unused ring that shares a bond (fused) or an atom (spiro) with placed atoms, repeatedly,
+ * so a whole ring system follows from the rings already placed.
+ */
+function growRingSystems(
+  rings: number[][],
+  used: Set<number[]>,
+  bondLength: number,
+  placed: Map<number, Point2D>,
+  members: number[]
+): void {
   let progress = true;
   while (progress) {
     progress = false;
-    for (let r = 1; r < rings.length; r++) {
-      if (used.has(r)) continue;
-      const ring = rings[r];
+    for (const ring of rings) {
+      if (used.has(ring)) continue;
       const placedIdx = ring.map((id, i) => (placed.has(id) ? i : -1)).filter((i) => i >= 0);
       if (placedIdx.length === 2) {
         const [i, j] = placedIdx;
@@ -395,7 +410,7 @@ function placeRings(
       } else {
         continue;
       }
-      used.add(r);
+      used.add(ring);
       progress = true;
     }
   }
@@ -446,19 +461,23 @@ function fuseRingOnBond(
   }
 }
 
-/** Attach the ring at atom a, growing away from the rest of the component. */
+/**
+ * Attach the ring at atom a, growing away from the rest of the component, or along `towards`
+ * (radians) when given: the ring's centre then lies straight on from the bond that reached a.
+ */
 function attachRingAtAtom(
   ring: number[],
   a: number,
   bondLength: number,
   placed: Map<number, Point2D>,
-  members: number[]
+  members: number[],
+  towards?: number
 ): void {
   const n = ring.length;
   const pa = placed.get(a)!;
   const c = centroid(members, placed);
-  let ux = pa.x - c.x;
-  let uy = pa.y - c.y;
+  let ux = towards !== undefined ? Math.cos(towards) : pa.x - c.x;
+  let uy = towards !== undefined ? Math.sin(towards) : pa.y - c.y;
   const len = Math.hypot(ux, uy);
   if (len < 1e-6) {
     ux = 0;
@@ -494,9 +513,13 @@ function placeBreadthFirst(
   placed: Map<number, Point2D>,
   bondLength: number,
   linearAtoms: Set<number> = new Set(),
-  chainAtoms: Set<number> = new Set()
+  chainAtoms: Set<number> = new Set(),
+  rings: number[][] = [],
+  usedRings: Set<number[]> = new Set()
 ): void {
   const queue = [...members];
+  const ringsOf = new Map<number, number[][]>();
+  for (const ring of rings) for (const id of ring) (ringsOf.get(id) ?? ringsOf.set(id, []).get(id)!).push(ring);
   while (queue.length > 0) {
     const atomId = queue.shift()!;
     const origin = placed.get(atomId)!;
@@ -524,6 +547,17 @@ function placeBreadthFirst(
       taken.push(angle);
       members.push(id);
       queue.push(id);
+
+      // A bond into a ring that is not drawn yet (rings joined by a chain or a single bond): draw that
+      // ring, and every ring fused to it, as regular polygons now, rather than atom by atom.
+      const ring = (ringsOf.get(id) ?? []).find((r) => !usedRings.has(r) && r.every((x) => x === id || !placed.has(x)));
+      if (ring) {
+        const before = members.length;
+        attachRingAtAtom(ring, id, bondLength, placed, members, angle);
+        usedRings.add(ring);
+        growRingSystems(rings, usedRings, bondLength, placed, members);
+        queue.push(...members.slice(before));
+      }
     }
   }
 }

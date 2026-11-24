@@ -6,7 +6,7 @@ import { CanvasRenderer } from '../draw/CanvasRenderer';
 import { DrawingStyle } from '../draw/DrawingStyle';
 import { Point2D } from '../draw/Point2D';
 import { Editor, Tool } from './editor';
-import { moveToward } from './geometry';
+import { circlePolygon, moveToward } from './geometry';
 import { leadingTokenLength, reverseLabel, trailingTokenLength } from './labels';
 import { Arrow, arrowShape } from './arrows';
 
@@ -41,7 +41,7 @@ export interface SceneState {
   /** Extra atoms to mark as attach points (e.g. where a piece being swung will join). */
   marks?: number[];
   /** Lasso path or rectangle corners being dragged out by the select tool. */
-  selectionShape?: { kind: 'lasso' | 'rect'; points: Point2D[] } | null;
+  selectionShape?: { kind: 'lasso' | 'rect' | 'circle'; points: Point2D[] } | null;
   /** Atoms of a ring still held by the mouse button (and the atom it hangs on): their bonds are drawn grey. */
   unsettled?: { ids: number[]; pivot: number } | null;
   /** An arrow being dragged out with the arrow tool (drawn grey until released). */
@@ -202,8 +202,17 @@ function drawValenceMark(renderer: CanvasRenderer, centre: Point2D, radius: numb
 const SELECTION_OUTLINE = '#0066FF';
 
 /** Dashed outline of the lasso or rectangle being dragged. */
-function drawSelectionShape(renderer: CanvasRenderer, shape: { kind: 'lasso' | 'rect'; points: Point2D[] }): void {
+function drawSelectionShape(renderer: CanvasRenderer, shape: { kind: 'lasso' | 'rect' | 'circle'; points: Point2D[] }): void {
   let outline = shape.points;
+  if (shape.kind === 'circle') {
+    if (outline.length < 2) return;
+    const centre = outline[0];
+    outline = circlePolygon(centre, outline[outline.length - 1], 72);
+    // A small cross marks the centre the circle is dragged from.
+    const d = 4;
+    renderer.drawDashedLine(new Point2D(centre.x - d, centre.y), new Point2D(centre.x + d, centre.y), SELECTION_OUTLINE, 1, 8, 0);
+    renderer.drawDashedLine(new Point2D(centre.x, centre.y - d), new Point2D(centre.x, centre.y + d), SELECTION_OUTLINE, 1, 8, 0);
+  }
   if (shape.kind === 'rect') {
     if (outline.length < 2) return;
     const [a, b] = [outline[0], outline[outline.length - 1]];

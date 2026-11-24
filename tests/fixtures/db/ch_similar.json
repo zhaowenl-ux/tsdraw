@@ -1,0 +1,35 @@
+{
+ "molecules": [
+  {
+   "molecule_chembl_id": "CHEMBL2386595",
+   "molecule_structures": {
+    "canonical_smiles": "[2H]C([2H])([2H])N1CCN(Cc2ccc(C(=O)Nc3ccc(C)c(Nc4nccc(-c5cccnc5)n4)c3)cc2)CC1"
+   },
+   "pref_name": null,
+   "similarity": "100"
+  },
+  {
+   "molecule_chembl_id": "CHEMBL1642",
+   "molecule_structures": {
+    "canonical_smiles": "CS(=O)(=O)O.Cc1ccc(NC(=O)c2ccc(CN3CCN(C)CC3)cc2)cc1Nc1nccc(-c2cccnc2)n1"
+   },
+   "pref_name": "IMATINIB MESYLATE",
+   "similarity": "100"
+  },
+  {
+   "molecule_chembl_id": "CHEMBL3098615",
+   "molecule_structures": {
+    "canonical_smiles": "Cc1ccc(NC(=O)c2ccc(CN3CCN(CCO)CC3)cc2)cc1Nc1nccc(-c2cccnc2)n1"
+   },
+   "pref_name": null,
+   "similarity": "88.57142925262451171875"
+  }
+ ],
+ "page_meta": {
+  "limit": 3,
+  "next": "/chembl/api/data/similarity.json?limit=3&offset=3&chembl_id=CHEMBL941&similarity=80&only=molecule_chembl_id%2Cpref_name%2Csimilarity%2Cmolecule_structures",
+  "offset": 0,
+  "previous": null,
+  "total_count": 24
+ }
+}

@@ -22,7 +22,7 @@ type DocBond = EditorDocument['bonds'][number];
 
 /** Read clipboard text: a MOL file if it looks like one, otherwise the first SMILES on it. */
 export function parseMolecule(text: string, bondLength: number): ParsedDocument {
-  if (/M {2}END|V2000|V3000/.test(text)) return parseMolfile(text, bondLength);
+  if (/M {2}END|V2000|V3000|M {2}V30 /.test(text)) return parseMolfile(text, bondLength);
   const first = text.trim().split(/\s+/)[0] ?? '';
   if (!first) throw new Error('Nothing to paste');
   return parseSmiles(first, bondLength);
@@ -36,9 +36,11 @@ export function parseMolfile(text: string, bondLength: number): ParsedDocument {
   const lines = text.replace(/\r/g, '').split('\n');
   // The counts line is the 4th line of a MOL file; tolerate missing header lines when pasted.
   let countsAt = lines.findIndex((l) => /V[23]000\s*$/.test(l));
-  if (countsAt < 0) countsAt = 3;
+  // A bare V3000 CTAB ("M  V30 BEGIN CTAB" ...) has no header or counts line.
+  const bareV3000 = countsAt < 0 && lines.some((l) => l.startsWith('M  V30 '));
+  if (countsAt < 0) countsAt = bareV3000 ? -1 : 3;
   const counts = lines[countsAt] ?? '';
-  const raw = counts.includes('V3000') ? readV3000(lines, countsAt) : readV2000(lines, countsAt);
+  const raw = bareV3000 || counts.includes('V3000') ? readV3000(lines, countsAt) : readV2000(lines, countsAt);
   if (raw.atoms.length === 0) throw new Error('The MOL file has no atoms');
 
   // Scale so the median bond is one drawing bond long; MOL y points up, the canvas y down.

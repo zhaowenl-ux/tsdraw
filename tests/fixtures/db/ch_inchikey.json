@@ -1,0 +1,33 @@
+{
+ "molecules": [
+  {
+   "first_approval": 2001,
+   "max_phase": "4.0",
+   "molecule_chembl_id": "CHEMBL941",
+   "molecule_properties": {
+    "alogp": "4.59",
+    "aromatic_rings": 4,
+    "full_molformula": "C29H31N7O",
+    "full_mwt": "493.62",
+    "hba": 7,
+    "hbd": 2,
+    "heavy_atoms": 37,
+    "mw_freebase": "493.62",
+    "np_likeness_score": "-1.80",
+    "num_ro5_violations": 0,
+    "psa": "86.28",
+    "qed_weighted": "0.39",
+    "ro3_pass": "N",
+    "rtb": 7
+   },
+   "pref_name": "IMATINIB"
+  }
+ ],
+ "page_meta": {
+  "limit": 20,
+  "next": null,
+  "offset": 0,
+  "previous": null,
+  "total_count": 1
+ }
+}

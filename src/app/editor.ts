@@ -17,7 +17,7 @@ export type StereoChirality = BondChirality.WEDGE | BondChirality.HASH | BondChi
 export type RingKind = 'single' | 'aromatic' | 'kekule';
 
 /** How the select tool picks a region: freehand lasso or rectangle. */
-export type SelectMode = 'lasso' | 'rect';
+export type SelectMode = 'lasso' | 'rect' | 'circle';
 
 export type Tool =
   | { kind: 'select'; mode?: SelectMode }
@@ -1652,7 +1652,7 @@ export function hillFormula(molecule: Molecule, labels: Map<number, string> = ne
 export function describeTool(tool: Tool): string {
   switch (tool.kind) {
     case 'select':
-      return tool.mode === 'rect' ? 'Rectangle select' : 'Lasso select';
+      return tool.mode === 'rect' ? 'Rectangle select' : tool.mode === 'circle' ? 'Circle select' : 'Lasso select';
     case 'atom':
       return `Atom ${tool.symbol}`;
     case 'text':

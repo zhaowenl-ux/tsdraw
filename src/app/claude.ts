@@ -12,6 +12,8 @@
  * the next question is sent to the new provider with the whole history translated to its format.
  */
 
+import type { AssistantTool } from './databases';
+
 export type ProviderId = 'claude' | 'openai' | 'grok';
 
 export interface ModelOption {
@@ -72,14 +74,16 @@ const ENDPOINTS: Record<ProviderId, string> = {
   openai: '/api/openai/v1/responses',
   grok: '/api/xai/v1/chat/completions',
 };
-const MAX_TOOL_ROUNDS = 6;
+const MAX_TOOL_ROUNDS = 8;
 const MAX_TOKENS = 2048;
 
 const SYSTEM = `You are a chemistry assistant built into tsdraw, a chemical structure drawing app used by medicinal and computational chemists.
 - When the user asks for a structure (a drug, reagent, functional group, reaction product...), call draw_molecule with a correct isomeric SMILES (include stereochemistry and E/Z when the compound has them), once per distinct molecule. The app draws it on the canvas.
 - Each message may include the structure currently drawn, as SMILES. Use it when the user refers to "this", "my molecule" or the drawing.
 - Answer briefly and precisely. Use plain text; short lists are fine. Give formulas and key properties when useful.
-- If you are not sure of a structure, say so rather than guessing.`;
+- If you are not sure of a structure, say so rather than guessing.
+- You can query public databases: search_compound and identify_structure (PubChem, with the ChEMBL id), find_similar (PubChem/ChEMBL similarity, PubChem substructure), search_pubmed (literature) and get_bioactivity (ChEMBL targets, potencies, mechanism, phase). Use them for facts that should be looked up rather than remembered, and say where numbers came from (CID, ChEMBL id, PMID). Never invent PMIDs or measured values.
+- To draw a named compound you are unsure of, take its SMILES from search_compound first.`;
 
 const DRAW_TOOL = {
   name: 'draw_molecule',
@@ -94,6 +98,13 @@ const DRAW_TOOL = {
     required: ['smiles'],
   },
 };
+
+/** A tool as the providers see it (name, description, JSON schema). */
+interface ToolSpec {
+  name: string;
+  description: string;
+  parameters: Record<string, unknown>;
+}
 
 // ---------- Provider-neutral conversation ----------
 
@@ -122,7 +133,9 @@ interface Reply {
 export type ChatEvent =
   | { kind: 'text'; text: string }
   | { kind: 'drawn'; name?: string; smiles: string; atoms: number }
-  | { kind: 'draw-failed'; smiles: string; error: string };
+  | { kind: 'draw-failed'; smiles: string; error: string }
+  /** A database lookup by the assistant (`error` set when it failed). */
+  | { kind: 'lookup'; text: string; error?: string };
 
 /** Draws a SMILES in the editor; returns the number of atoms drawn, or throws with a reason. */
 export type DrawMolecule = (smiles: string) => number;
@@ -142,7 +155,7 @@ function parseArgs(json: unknown): Record<string, unknown> {
 
 // ---------- Request / response translation, one per provider ----------
 
-function claudeRequest(model: string, turns: Turn[]): unknown {
+function claudeRequest(model: string, turns: Turn[], tools: ToolSpec[]): unknown {
   const messages = turns.map((t) => {
     if (t.role === 'user') return { role: 'user', content: t.text };
     if (t.role === 'tool')
@@ -160,8 +173,13 @@ function claudeRequest(model: string, turns: Turn[]): unknown {
     for (const c of t.calls) content.push({ type: 'tool_use', id: safeId(c.id), name: c.name, input: c.input });
     return { role: 'assistant', content: content.length ? content : [{ type: 'text', text: '(no reply)' }] };
   });
-  const { parameters, ...tool } = DRAW_TOOL;
-  return { model, max_tokens: MAX_TOKENS, system: SYSTEM, tools: [{ ...tool, input_schema: parameters }], messages };
+  return {
+    model,
+    max_tokens: MAX_TOKENS,
+    system: SYSTEM,
+    tools: tools.map(({ parameters, ...tool }) => ({ ...tool, input_schema: parameters })),
+    messages,
+  };
 }
 
 function claudeReply(body: any): Reply {
@@ -173,7 +191,7 @@ function claudeReply(body: any): Reply {
 }
 
 /** OpenAI Responses API (tools on the newest GPT models are only on this API). Stateless: store=false. */
-function openaiRequest(model: string, turns: Turn[]): unknown {
+function openaiRequest(model: string, turns: Turn[], tools: ToolSpec[]): unknown {
   const input: unknown[] = [];
   for (const t of turns) {
     if (t.role === 'user') input.push({ role: 'user', content: t.text });
@@ -190,7 +208,7 @@ function openaiRequest(model: string, turns: Turn[]): unknown {
     model,
     instructions: SYSTEM,
     input,
-    tools: [{ type: 'function', ...DRAW_TOOL }],
+    tools: tools.map((t) => ({ type: 'function', ...t })),
     max_output_tokens: MAX_TOKENS * 4, // reasoning tokens count against this limit
     store: false,
   };
@@ -209,7 +227,7 @@ function openaiReply(body: any): Reply {
 }
 
 /** xAI Chat Completions (OpenAI-compatible). */
-function grokRequest(model: string, turns: Turn[]): unknown {
+function grokRequest(model: string, turns: Turn[], tools: ToolSpec[]): unknown {
   const messages: unknown[] = [{ role: 'system', content: SYSTEM }];
   for (const t of turns) {
     if (t.role === 'user') messages.push({ role: 'user', content: t.text });
@@ -231,7 +249,7 @@ function grokRequest(model: string, turns: Turn[]): unknown {
           : {}),
       });
   }
-  return { model, max_tokens: MAX_TOKENS * 4, messages, tools: [{ type: 'function', function: DRAW_TOOL }] };
+  return { model, max_tokens: MAX_TOKENS * 4, messages, tools: tools.map((t) => ({ type: 'function', function: t })) };
 }
 
 function grokReply(body: any): Reply {
@@ -244,7 +262,10 @@ function grokReply(body: any): Reply {
   return { text: typeof message.content === 'string' && message.content ? [message.content] : [], calls };
 }
 
-const ADAPTERS: Record<ProviderId, { request: (model: string, turns: Turn[]) => unknown; reply: (body: any) => Reply }> = {
+const ADAPTERS: Record<
+  ProviderId,
+  { request: (model: string, turns: Turn[], tools: ToolSpec[]) => unknown; reply: (body: any) => Reply }
+> = {
   claude: { request: claudeRequest, reply: claudeReply },
   openai: { request: openaiRequest, reply: openaiReply },
   grok: { request: grokRequest, reply: grokReply },
@@ -299,6 +320,8 @@ export class ChemistryChat {
   model = PROVIDERS[0].models[0].id;
   /** Keys entered in Settings › AI; a provider without one uses the dev server's key from .env.local. */
   apiKeys: Partial<Record<ProviderId, string>> = {};
+  /** Tools offered besides draw_molecule (the database lookups). */
+  tools: AssistantTool[] = [];
 
   constructor(
     private readonly draw: DrawMolecule,
@@ -333,7 +356,9 @@ export class ChemistryChat {
         this.history.push({ role: 'assistant', text: reply.text.join('\n\n'), calls: reply.calls });
         for (const text of reply.text) if (text.trim()) onEvent({ kind: 'text', text });
         if (reply.calls.length === 0) return;
-        this.history.push({ role: 'tool', results: reply.calls.map((c) => this.runTool(c, onEvent)) });
+        const results: ToolResult[] = [];
+        for (const c of reply.calls) results.push(await this.runTool(c, onEvent));
+        this.history.push({ role: 'tool', results });
       }
     } catch (err) {
       // Drop this unfinished exchange so the next question starts from a consistent history.
@@ -342,8 +367,21 @@ export class ChemistryChat {
     }
   }
 
-  private runTool(call: ToolCall, onEvent: (e: ChatEvent) => void): ToolResult {
-    if (call.name !== 'draw_molecule') return { id: call.id, content: `Unknown tool ${call.name}`, isError: true };
+  private async runTool(call: ToolCall, onEvent: (e: ChatEvent) => void): Promise<ToolResult> {
+    if (call.name !== 'draw_molecule') {
+      const tool = this.tools.find((t) => t.name === call.name);
+      if (!tool) return { id: call.id, content: `Unknown tool ${call.name}`, isError: true };
+      const line = tool.describe(call.input);
+      try {
+        const content = await tool.run(call.input);
+        onEvent({ kind: 'lookup', text: line });
+        return { id: call.id, content, isError: false };
+      } catch (err) {
+        const error = err instanceof Error ? err.message : String(err);
+        onEvent({ kind: 'lookup', text: line, error });
+        return { id: call.id, content: error, isError: true };
+      }
+    }
     const smiles = String(call.input.smiles ?? '');
     const name = typeof call.input.name === 'string' ? call.input.name : undefined;
     try {
@@ -365,7 +403,7 @@ export class ChemistryChat {
       response = await this.fetchFn(ENDPOINTS[provider.id], {
         method: 'POST',
         headers: { 'content-type': 'application/json', ...this.keyHeader(provider.id) },
-        body: JSON.stringify(adapter.request(this.model, this.history)),
+        body: JSON.stringify(adapter.request(this.model, this.history, [DRAW_TOOL, ...this.tools])),
       });
     } catch {
       throw new Error(`Cannot reach the ${provider.name} API. Start the app with "npm run dev" (the dev server forwards the requests).`);

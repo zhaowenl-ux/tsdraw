@@ -18,6 +18,11 @@ import { APP_VERSION } from './version';
 import { applyDrawingStyle, loadSettings } from './settings';
 import { initSettingsPanel } from './settingsPanel';
 import { initHelpDialog } from './help';
+import { Databases, databaseTools } from './databases';
+import { initDbPanel } from './dbPanel';
+import { initNameDialog } from './namePanel';
+import { circlePolygon } from './geometry';
+import { classifyPaste, MAX_PASTE_ITEMS, needsLookup, PasteResult, resolvePaste } from './pasteResolve';
 import { ArrowKind, arrowEnd, isArrowKind } from './arrows';
 
 // Version: set from the code (not the HTML), so it always shows which code the page is running.
@@ -80,11 +85,15 @@ function redraw(): void {
   updateStatus();
 }
 
+type StatusKind = 'busy' | 'ok' | 'warn' | 'error';
+let statusMessage: { text: string; kind: StatusKind } | null = null;
+let statusTimer = 0;
+
 function hintText(): string {
   if (editor.pending !== null) return 'Click to continue the chain · Esc to stop';
   switch (tool.kind) {
     case 'select':
-      return `${tool.mode === 'rect' ? 'Drag a rectangle' : 'Draw a loop'} around atoms to select them · drag the selection to move it · Delete removes it`;
+      return `${tool.mode === 'rect' ? 'Drag a rectangle' : tool.mode === 'circle' ? 'Drag a circle out from its centre' : 'Draw a loop'} around atoms to select them · drag the selection to move it · Delete removes it`;
     case 'atom':
       return 'Click empty space to add an atom, or an atom to change it';
     case 'bond':
@@ -105,7 +114,10 @@ function updateStatus(): void {
   byId('bondCount').textContent = `Bonds: ${editor.bondCount()}`;
   byId('formula').textContent = `Formula: ${editor.formula() || '—'}`;
   byId('mode').textContent = `Mode: ${describeTool(tool)}`;
-  byId('hint').textContent = hintText();
+  const hint = byId('hint');
+  hint.textContent = hintText();
+  hint.className = '';
+  hint.title = '';
 
   // Chemistry check: count of atoms over their valence; hovering one explains it.
   const problems = editor.valenceProblems();
@@ -117,6 +129,27 @@ function updateStatus(): void {
     const name = editor.getMolecule().getAtom(hovered!)?.element.name ?? problem.symbol;
     byId('hint').textContent = describeProblem(problem, name);
   }
+  // A message (paste result, lookup progress) takes the place of the hint for a while.
+  if (statusMessage) {
+    const icon = { busy: '⏳ ', ok: '✔ ', warn: '⚠ ', error: '✖ ' }[statusMessage.kind];
+    hint.textContent = icon + statusMessage.text;
+    hint.className = `status-msg status-msg-${statusMessage.kind}`;
+    hint.title = statusMessage.text;
+  }
+}
+
+/** Show a message at the bottom right of the status bar (instead of the hint); busy ones stay until replaced. */
+function showStatusMessage(text: string, kind: StatusKind): void {
+  statusMessage = { text, kind };
+  window.clearTimeout(statusTimer);
+  const ms = { busy: 0, ok: 6000, warn: 9000, error: 10000 }[kind];
+  if (ms) {
+    statusTimer = window.setTimeout(() => {
+      statusMessage = null;
+      updateStatus();
+    }, ms);
+  }
+  updateStatus();
 }
 
 function showNotice(message: string): void {
@@ -226,7 +259,7 @@ window.addEventListener('pointerup', (e) => {
 });
 
 function toolFromDataset(ds: DOMStringMap): Tool | null {
-  if (ds.select) return { kind: 'select', mode: ds.select === 'rect' ? 'rect' : 'lasso' };
+  if (ds.select) return { kind: 'select', mode: ds.select === 'rect' || ds.select === 'circle' ? ds.select : 'lasso' };
   if (ds.bond) {
     const type = ds.bond === 'double' ? BondType.DOUBLE : ds.bond === 'triple' ? BondType.TRIPLE : BondType.SINGLE;
     return { kind: 'bond', type };
@@ -474,7 +507,7 @@ function saveMolfile(): void {
   showNotice(`Saved MOL file${unknownNote(unknown)}`);
 }
 
-// ---------- copy and paste (MOL file / SMILES) ----------
+// ---------- copy and paste (MOL file / SMILES / names and identifiers) ----------
 
 /** Atoms to copy: the selected ones, or the whole drawing when nothing (or only a bond) is selected. */
 function copySource(): Editor {
@@ -510,17 +543,59 @@ async function copyAs(format: 'mol' | 'smiles'): Promise<void> {
   }
 }
 
-/** Put a MOL file or SMILES from the clipboard into the drawing, next to what is already there. */
-function pasteText(text: string): void {
-  let doc;
+/**
+ * Put structures from the clipboard into the drawing, next to what is already there. Reads MOL/SDF
+ * files, CTABs and SMILES locally; InChI, InChIKey, CAS numbers, CIDs, ChEMBL ids and names (drug,
+ * brand, trivial, IUPAC) are looked up in PubChem (OPSIN for systematic names). One structure per line.
+ */
+let pasting = false;
+async function pasteText(text: string): Promise<void> {
+  const items = classifyPaste(text);
+  if (items.length === 0) return showStatusMessage('Nothing to paste: the clipboard has no text', 'error');
+  if (pasting) return showStatusMessage('Still looking up the last paste…', 'busy');
+  pasting = true;
   try {
-    doc = parseMolecule(text, editor.bondLength);
+    const online = needsLookup(items);
+    if (online) showStatusMessage(`Looking up ${items.length === 1 ? `“${shorten(items[0].text, 50)}”` : `${items.length} entries`} in PubChem…`, 'busy');
+    const result = await resolvePaste(text, editor.bondLength, databases, (done, total, item) => {
+      if (online && total > 1) showStatusMessage(`Looking up ${done + 1} of ${total}: ${shorten(item.text, 40)}…`, 'busy');
+    });
+    let atoms = 0;
+    for (const s of result.structures) atoms += placeDocument(s.doc).length;
+    const kind = result.structures.length === 0 ? 'error' : result.failed.length ? 'warn' : 'ok';
+    showStatusMessage(pasteSummary(result, atoms), kind);
   } catch (err) {
-    showNotice(`Could not paste: ${err instanceof Error ? err.message : String(err)}`);
-    return;
+    showStatusMessage(`Failed to paste: ${err instanceof Error ? err.message : String(err)}`, 'error');
+  } finally {
+    pasting = false;
   }
-  const ids = placeDocument(doc);
-  showNotice(`Pasted ${ids.length} atom${ids.length === 1 ? '' : 's'} · drag to move them`);
+}
+
+function shorten(text: string, max: number): string {
+  const one = text.replace(/\s+/g, ' ').trim();
+  return one.length > max ? one.slice(0, max - 1) + '…' : one;
+}
+
+/** "Pasted Aspirin (PubChem CID 2244) · drag to move it", or what went wrong. */
+function pasteSummary(result: PasteResult, atoms: number): string {
+  const { structures, failed, skipped } = result;
+  const failNote = failed.length
+    ? failed.length === 1 && structures.length === 0
+      ? `Failed to paste “${shorten(failed[0].text, 50)}”: ${failed[0].reason}`
+      : ` · not found: ${failed.map((f) => shorten(f.text, 25)).slice(0, 3).join(', ')}${failed.length > 3 ? ` +${failed.length - 3} more` : ''}`
+    : '';
+  if (structures.length === 0) return failed.length === 1 ? failNote : `Failed to paste${failNote}`;
+  const skipNote = skipped ? ` · ${skipped} more lines left out (max ${MAX_PASTE_ITEMS})` : '';
+  if (structures.length === 1) {
+    const s = structures[0];
+    const what = s.title
+      ? `${s.title} (${s.source})`
+      : s.source
+        ? `${shorten(s.text, 40)} (${s.source})`
+        : `${atoms} atom${atoms === 1 ? '' : 's'}`;
+    return `Successfully pasted ${what}${failNote}`;
+  }
+  return `Successfully pasted ${structures.length} structures (${atoms} atoms)${failNote}${skipNote}`;
 }
 
 /** Add a structure to the drawing: centred on an empty canvas, otherwise beside what is there. Returns the new atom ids. */
@@ -723,6 +798,8 @@ function showChatEvent(e: ChatEvent, from: string): void {
   if (e.kind === 'text') addMessage('claude', `<span class="ai-from">${escapeHtml(from)}</span>${formatReply(e.text)}`);
   else if (e.kind === 'drawn')
     addMessage('tool', `🧪 Drew ${e.name ? `<strong>${escapeHtml(e.name)}</strong> ` : ''}<code>${escapeHtml(e.smiles)}</code>`);
+  else if (e.kind === 'lookup')
+    addMessage(e.error ? 'error' : 'tool', `🔎 ${escapeHtml(e.text)}${e.error ? `: ${escapeHtml(e.error)}` : ''}`);
   else addMessage('error', `Could not draw <code>${escapeHtml(e.smiles)}</code>: ${escapeHtml(e.error)}`);
 }
 
@@ -775,9 +852,10 @@ byId('claudeToggle').addEventListener('click', () => {
 
 async function pasteFromClipboard(): Promise<void> {
   try {
-    pasteText(await navigator.clipboard.readText());
+    const text = await navigator.clipboard.readText();
+    void pasteText(text);
   } catch {
-    showNotice('The browser blocked the clipboard: press Ctrl+V to paste');
+    showStatusMessage('Failed to paste: the browser blocked the clipboard, press Ctrl+V instead', 'error');
   }
 }
 
@@ -796,7 +874,7 @@ document.addEventListener('copy', (e) => {
 document.addEventListener('paste', (e) => {
   if (typing() || !e.clipboardData) return;
   e.preventDefault();
-  pasteText(e.clipboardData.getData('text/plain'));
+  void pasteText(e.clipboardData.getData('text/plain'));
 });
 
 const fileInput = byId<HTMLInputElement>('fileInput');
@@ -818,7 +896,61 @@ const settingsPanel = initSettingsPanel({
 
 const helpDialog = initHelpDialog();
 
+// ---------- public databases: PubChem, ChEMBL, PubMed ----------
+
+const databases = new Databases();
+/** What the database lookups work on: the selection, or the whole drawing. */
+function lookupSmiles(): { smiles: string; selection: boolean; unknown: string[] } {
+  if (editor.atomCount() === 0) return { smiles: '', selection: false, unknown: [] };
+  const source = copySource();
+  const { text, unknown } = toSmiles(source);
+  return { smiles: text, selection: source !== editor, unknown };
+}
+const dbPanel = initDbPanel({
+  db: databases,
+  drawingSmiles: lookupSmiles,
+  draw: (smiles, name) => {
+    const ids = placeDocument(parseMolecule(smiles, editor.bondLength));
+    editor.clearSelection();
+    redraw();
+    showNotice(`Drew ${name ?? 'the compound'} (${ids.length} atoms)`);
+  },
+});
+chat.tools = databaseTools(databases, () => (editor.atomCount() > 0 ? toSmiles(editor).text : ''));
+function syncDbButton(): void {
+  byIdOrNull('dbRibbonBtn')?.classList.toggle('active', dbPanel.isOpen());
+}
+function openDb(view?: Parameters<typeof dbPanel.open>[0]): void {
+  dbPanel.open(view);
+  syncDbButton();
+}
+
+// ---------- Structure › Name structure ----------
+
+const nameDialog = initNameDialog({
+  db: databases,
+  askAi: (smiles) => {
+    if (byId('claudePanel').classList.contains('collapsed')) byId('claudeToggle').click();
+    claudeInput.value = `Give the IUPAC name of this structure: ${smiles}. Show your reasoning briefly (parent, substituents, locants).`;
+    void askClaude();
+  },
+});
+
+/** Name the selected atoms, or the whole drawing: each disconnected piece separately, up to 6. */
+function nameStructureAction(): void {
+  if (editor.atomCount() === 0) return showStatusMessage('Nothing to name: draw or paste a structure first', 'error');
+  const source = copySource();
+  const { text } = toSmiles(source);
+  if (!text) return showStatusMessage('Could not write this structure as SMILES', 'error');
+  // A salt or mixture is looked up whole; separate molecules one by one.
+  const pieces = text.split('.');
+  const what = source === editor || source.atomCount() === editor.atomCount() ? 'the drawing' : 'the selection';
+  const charged = pieces.some((p) => /[+-]\]/.test(p));
+  nameDialog.open(pieces.length > 1 && !charged ? pieces.slice(0, 6) : [text], what);
+}
+
 const actions: Record<string, () => void> = {
+  name: nameStructureAction,
   settings: () => settingsPanel.open(),
   new: newDrawing,
   open: () => fileInput.click(),
@@ -836,6 +968,15 @@ const actions: Record<string, () => void> = {
   clean: cleanUp,
   expand: expandLabels,
   'toggle-ai': () => byId('claudeToggle').click(),
+  'db-toggle': () => {
+    dbPanel.toggle();
+    syncDbButton();
+  },
+  'db-search': () => openDb('search'),
+  'db-identify': () => openDb('details'),
+  'db-similar': () => openDb('similar'),
+  'db-literature': () => openDb('literature'),
+  'db-bioactivity': () => openDb('bioactivity'),
   tutorial: () => helpDialog.open('tutorial'),
   help: () => helpDialog.open('help'),
   about: () => helpDialog.open('about'),
@@ -950,7 +1091,7 @@ let swinging: { ids: number[]; pivot: number; start: Point2D; moved: boolean; ri
 
 let textPress: Point2D | null = null;
 /** Lasso path or rectangle (first and last point are the corners) being dragged by the select tool. */
-let region: { kind: 'lasso' | 'rect'; points: Point2D[] } | null = null;
+let region: { kind: 'lasso' | 'rect' | 'circle'; points: Point2D[] } | null = null;
 /** A press on a multi-atom selection: dragging moves it, a plain click selects what was clicked. */
 let moving: { ids: number[]; arrows: number[]; start: Point2D; last: Point2D; started: boolean } | null = null;
 /** Arrow tool: an arrow being dragged out from where the button went down. */
@@ -1069,7 +1210,7 @@ window.addEventListener('pointermove', (e) => {
     return;
   }
   if (region) {
-    if (region.kind === 'rect') region.points = [region.points[0], p];
+    if (region.kind === 'rect' || region.kind === 'circle') region.points = [region.points[0], p];
     else if (region.points[region.points.length - 1].distanceTo(p) >= 2) region.points.push(p);
     redraw();
     return;
@@ -1145,6 +1286,9 @@ window.addEventListener('pointerup', (e) => {
     else if (r.kind === 'rect') {
       const [a, b] = [pts[0], pts[pts.length - 1]];
       editor.selectAtoms(editor.atomsInRect(a, b), editor.arrowsInRect(a, b));
+    } else if (r.kind === 'circle') {
+      const circle = circlePolygon(pts[0], pts[pts.length - 1]);
+      editor.selectAtoms(editor.atomsInPolygon(circle), editor.arrowsInPolygon(circle));
     } else editor.selectAtoms(editor.atomsInPolygon(pts), editor.arrowsInPolygon(pts));
     redraw();
   }
@@ -1198,7 +1342,14 @@ document.addEventListener('keydown', (e) => {
   const key = e.key.toLowerCase();
 
   // While a dialog is open, its own keys apply, not the editor's.
-  if (settingsPanel.isOpen() || helpDialog.isOpen()) return;
+  if (settingsPanel.isOpen() || helpDialog.isOpen() || nameDialog.isOpen()) return;
+
+  if (mod && e.altKey && key === 'n') {
+    e.preventDefault();
+    closeAppMenu();
+    nameStructureAction();
+    return;
+  }
 
   if (e.key === 'F1') {
     e.preventDefault();

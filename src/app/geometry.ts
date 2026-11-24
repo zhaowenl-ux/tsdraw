@@ -70,6 +70,15 @@ export function distanceToSegment(p: Point2D, a: Point2D, b: Point2D): number {
 }
 
 /** Whether p lies inside the polygon (even-odd rule). The polygon is closed implicitly. */
+/** A circle as a polygon (for hit tests and dashed outlines): centre and a point on the rim. */
+export function circlePolygon(centre: Point2D, rim: Point2D, sides = 64): Point2D[] {
+  const r = centre.distanceTo(rim);
+  return Array.from({ length: sides }, (_, k) => {
+    const t = (2 * Math.PI * k) / sides;
+    return new Point2D(centre.x + r * Math.cos(t), centre.y + r * Math.sin(t));
+  });
+}
+
 export function pointInPolygon(p: Point2D, polygon: Point2D[]): boolean {
   let inside = false;
   for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {

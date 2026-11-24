@@ -41,8 +41,10 @@ const TUTORIAL = `
   <li>Press and hold a toolbar button with a small ▾ to see more tools of that kind.</li>
   <li>Hold ${kbd('Shift')} while turning a ring or drawing an arrow to snap the angle.</li>
   <li>Use the <b>T</b> tool to type a group such as NO2, COOH or OMe on an atom; <b>Expand</b> turns it into real atoms.</li>
-  <li>Paste a SMILES or MOL file with ${kbd('Ctrl+V')}.</li>
+  <li>Paste a SMILES, MOL file, InChI, CAS number or compound/drug name with ${kbd('Ctrl+V')}.</li>
   <li>Ask the AI panel “Draw aspirin” to put a structure on the canvas.</li>
+  <li><b>Databases</b> (top bar) looks up the drawing in PubChem, ChEMBL and PubMed.</li>
+  <li><b>Structure › Name structure</b> (${kbd('Ctrl+Alt+N')}) gives the common, generic (INN), IUPAC and trade names from PubChem, Wikidata and Wikipedia.</li>
 </ul>
 <p class="settings-intro help-gap">Everything else is in <a href="#" data-help-goto="help">Help</a>.</p>
 `;
@@ -89,7 +91,7 @@ const TOPICS: Topic[] = [
     title: 'Selecting and moving',
     html: `
 <ul class="help-list">
-  <li>The select button has a <b>lasso</b> and a <b>rectangle</b>. Drag around atoms (and arrows) to select them.</li>
+  <li>The select button has a <b>lasso</b>, a <b>rectangle</b> and a <b>circle</b> (drag it out from its centre). Drag around atoms (and arrows) to select them.</li>
   <li>Drag a selection to move it; ${kbd('Delete')} or ${kbd('Backspace')} removes it.</li>
   <li>With any tool, press an atom or bond and drag to <b>rotate</b> the whole connected piece about its centre.</li>
   <li><b>Clean up</b> recomputes a tidy 2D layout and keeps the orientation as close to yours as it can.</li>
@@ -113,10 +115,26 @@ const TOPICS: Topic[] = [
   <li><b>Save</b> writes a tsdraw JSON file, which <b>Open</b> reads back with everything intact.</li>
   <li><b>Save as</b> writes SMILES (.smi) or a MOL file (.mol).</li>
   <li>${kbd('Ctrl+C')} copies the selection — or the whole drawing — as a MOL file; the Copy menu also offers SMILES.</li>
-  <li>${kbd('Ctrl+V')} pastes a MOL file or a SMILES string, laid out automatically.</li>
+  <li>${kbd('Ctrl+V')} pastes a structure from almost any chemistry text: MOL/SDF files and CTABs, SMILES, InChI, InChIKey, CAS numbers (50-78-2), PubChem CIDs, ChEMBL ids, and names — trivial, generic or brand drug names (Tylenol) and IUPAC names. Names and identifiers are looked up in PubChem (OPSIN for systematic names), so they need the internet. Several lines paste one structure per line.</li>
   <li><b>PNG</b> saves an image of the drawing.</li>
   <li><b>New</b> starts an empty drawing; <b>Clear</b> empties the canvas (${kbd('Ctrl+Z')} brings it back).</li>
 </ul>`,
+  },
+  {
+    id: 'databases',
+    title: 'Databases',
+    html: `
+<p>The <b>Databases</b> button (top bar), or the <b>Database</b> menu, opens a panel on the right that looks things up in three public databases: <b>PubChem</b> (compounds), <b>ChEMBL</b> (bioactivity) and <b>PubMed</b> (literature). It needs an internet connection; nothing you draw is stored by them.</p>
+<ul class="help-list">
+  <li><b>Search</b> by name, CAS number, PubChem CID, InChIKey or ChEMBL id. <b>Draw</b> puts a result on the canvas; <b>Look up</b> makes it the subject of the other tabs.</li>
+  <li>Otherwise the tabs work on <b>the drawing</b> — or only on the selected atoms, if you selected some.</li>
+  <li><b>Details</b> identifies the structure: PubChem CID, names, IUPAC name, formula, MW, XLogP, TPSA, H-bond donors and acceptors, InChIKey, and its ChEMBL id and development phase. A structure PubChem does not know is probably new.</li>
+  <li><b>Similar</b> finds similar compounds in PubChem or ChEMBL (choose the Tanimoto threshold), or PubChem compounds that <i>contain</i> the drawing (substructure). Each hit can be drawn.</li>
+  <li><b>Literature</b> searches PubMed, starting from the compound's name; edit the query freely (PubMed syntax, e.g. <code>"imatinib" AND resistance</code>) and sort by best match or newest.</li>
+  <li><b>Bioactivity</b> shows ChEMBL's mechanism of action, development phase and the most potent targets: the best pChEMBL value per target (−log<sub>10</sub> of the molar IC50, Ki, Kd or EC50), with how many measurements there are. Hover a row to see the assay.</li>
+  <li>Text labels that cannot be expanded (shown as * in exports) must be expanded or removed before a lookup.</li>
+</ul>
+<p>The AI panel can use the same databases: ask, for example, “What is the ChEMBL bioactivity of this?” or “Find recent papers on resistance to this drug.”</p>`,
   },
   {
     id: 'ai',
@@ -125,6 +143,7 @@ const TOPICS: Topic[] = [
 <ul class="help-list">
   <li>The panel under the canvas talks to Claude, ChatGPT or Grok. Pick one with the buttons and a model from the list.</li>
   <li>Ask chemistry questions about what you drew — the current drawing is sent along — or ask it to draw something: “Draw ibuprofen”.</li>
+  <li>The assistant can look things up in PubChem, ChEMBL and PubMed (see <a href="#" data-help-goto="databases">Databases</a>); each lookup shows as a 🔎 line in the chat.</li>
   <li>${kbd('Enter')} sends, ${kbd('Shift+Enter')} starts a new line, <b>Clear</b> starts a new conversation. View › Show / hide AI panel folds it away.</li>
   <li>Each provider needs an API key: enter it in File › Settings › AI, or put it in <code>.env.local</code> for the dev server.</li>
 </ul>`,
@@ -156,7 +175,7 @@ const TOPICS: Topic[] = [
   <tr><td>${kbd('Ctrl+Z')}</td><td>Undo</td></tr>
   <tr><td>${kbd('Ctrl+Y')} / ${kbd('Ctrl+Shift+Z')}</td><td>Redo</td></tr>
   <tr><td>${kbd('Ctrl+C')}</td><td>Copy as MOL file</td></tr>
-  <tr><td>${kbd('Ctrl+V')}</td><td>Paste MOL file or SMILES</td></tr>
+  <tr><td>${kbd('Ctrl+V')}</td><td>Paste a structure: MOL, SMILES, InChI, CAS or name</td></tr>
   <tr><td>${kbd('Delete')} / ${kbd('Backspace')}</td><td>Delete the selection</td></tr>
   <tr><td>${kbd('Esc')}</td><td>Stop the chain, clear the selection, cancel a held ring, close menus</td></tr>
   <tr><td>${kbd('Shift')} (while dragging)</td><td>Snap ring turns to 30°, arrows to 15°</td></tr>

@@ -4,6 +4,7 @@ import { Point2D } from '../src/draw/Point2D';
 import { BondType, BondChirality } from '../src/core/Bond';
 import { CoordinateGenerator } from '../src/draw/CoordinateGenerator';
 import { DrawingConfig } from '../src/draw/DrawingConfig';
+import { parseSmiles } from '../src/app/import';
 
 const BL = 30;
 const P = (x: number, y: number) => new Point2D(x, y);
@@ -96,4 +97,38 @@ describe('clean up of overlapping pieces', () => {
     ed.relayout(gen());
     expect(minSeparation(ed)).toBeGreaterThan(0.9);
   });
+});
+
+describe('rings joined by chains are drawn as regular polygons', () => {
+  /** Smallest angle (as the 1-3 distance, in bond lengths) between two bonds of an atom with at most 3 bonds. */
+  function sharpest(ed: Editor): number {
+    const adj = new Map<number, number[]>();
+    for (const b of ed.getMolecule().getBonds()) {
+      (adj.get(b.atomId1) ?? adj.set(b.atomId1, []).get(b.atomId1)!).push(b.atomId2);
+      (adj.get(b.atomId2) ?? adj.set(b.atomId2, []).get(b.atomId2)!).push(b.atomId1);
+    }
+    let min = Infinity;
+    for (const ns of adj.values()) {
+      if (ns.length > 3) continue;
+      for (let i = 0; i < ns.length; i++)
+        for (let j = i + 1; j < ns.length; j++)
+          min = Math.min(min, ed.getPosition(ns[i])!.distanceTo(ed.getPosition(ns[j])!) / BL);
+    }
+    return min;
+  }
+
+  for (const [name, smiles] of [
+    ['imatinib', 'CC1=C(C=C(C=C1)NC(=O)C2=CC=C(C=C2)CN3CCN(CC3)C)NC4=NC=CC(=N4)C5=CN=CC=C5'],
+    ['losartan', 'CCCCC1=NC(=C(N1CC2=CC=C(C=C2)C3=CC=CC=C3C4=NNN=N4)CO)Cl'],
+    ['biphenyl', 'c1ccccc1-c1ccccc1'],
+  ]) {
+    it(`${name}: no ring is twisted, before or after clean up`, () => {
+      const ed = new Editor(BL);
+      ed.loadDocument({ format: 'tsdraw-document', version: 1, name, ...parseSmiles(smiles, BL) });
+      expect(sharpest(ed)).toBeGreaterThan(1.55); // every angle at least ~100 degrees
+      ed.relayout(gen());
+      expect(sharpest(ed)).toBeGreaterThan(1.55);
+      expect(minSeparation(ed)).toBeGreaterThan(0.9);
+    });
+  }
 });

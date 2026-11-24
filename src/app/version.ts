@@ -4,7 +4,7 @@
  */
 import licenseText from '../../LICENSE?raw';
 
-export const APP_VERSION = '0.12';
+export const APP_VERSION = '0.18';
 
 /** Set by Vite at build time (vite.app.config.ts `define`); absent in tests. */
 declare const __TSDRAW_BUILD_TIME__: string | undefined;

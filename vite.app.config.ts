@@ -51,6 +51,12 @@ export default defineConfig(({ mode }) => {
     '/api/openai': forward('/api/openai', 'https://api.openai.com', openaiKey, (req, key) => {
       req.setHeader('authorization', `Bearer ${key}`);
     }),
+    // OPSIN (IUPAC name -> structure) for smart paste, when a browser will not call it directly.
+    '/api/opsin': {
+      target: 'https://opsin.ch.cam.ac.uk',
+      changeOrigin: true,
+      rewrite: (path: string) => path.replace(/^\/api\/opsin/, '/opsin'),
+    },
     '/api/xai': forward('/api/xai', 'https://api.x.ai', xaiKey, (req, key) => {
       req.setHeader('authorization', `Bearer ${key}`);
     }),

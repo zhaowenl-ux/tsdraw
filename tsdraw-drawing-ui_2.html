@@ -682,6 +682,24 @@
             gap: 8px;
         }
 
+        .status-hint-item {
+            margin-left: auto;
+            min-width: 0;
+        }
+
+        #hint {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 60vw;
+        }
+
+        .status-msg { font-weight: 600; }
+        .status-msg-busy { color: #555; font-style: italic; }
+        .status-msg-ok { color: #2e7d32; }
+        .status-msg-warn { color: #b26a00; }
+        .status-msg-error { color: #c0392b; }
+
         .status-indicator {
             width: 10px;
             height: 10px;
@@ -814,6 +832,31 @@
 
 /* Help dialog (Help › Quick tutorial / Help / About): reuses the settings dialog layout */
         .help-dialog { width: min(820px, 94vw); height: min(600px, 88vh); }
+        .name-dialog { width: min(780px, 94vw); height: min(640px, 90vh); }
+        .name-dialog .settings-main { overflow-y: auto; }
+        .name-head { margin: 4px 0 14px; }
+        .name-title { font-size: 20px; font-weight: 600; color: #222; }
+        .name-desc { color: #555; margin-top: 2px; }
+        .name-links { font-size: 12px; margin-top: 6px; }
+        .name-links a { color: #4a5bd4; text-decoration: none; }
+        .name-links a:hover { text-decoration: underline; }
+        .name-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .name-table th { text-align: left; vertical-align: top; width: 150px; padding: 7px 10px 7px 0; color: #444; font-weight: 600; }
+        .name-table td { padding: 7px 0; vertical-align: top; border-top: 1px solid #eee; }
+        .name-table th { border-top: 1px solid #eee; }
+        .name-value { word-break: break-word; color: #222; user-select: text; }
+        .name-note { font-size: 11px; color: #888; font-weight: 400; margin-top: 2px; }
+        .name-copy { border: none; background: none; color: #888; cursor: pointer; padding: 2px 4px; border-radius: 4px; }
+        .name-copy:hover { background: #eef0fb; color: #4a5bd4; }
+        .name-copy.copied, .name-chip.copied { color: #2e7d32; background: #e8f5e9; }
+        .name-chip { display: inline-block; margin: 0 6px 4px 0; padding: 1px 8px; border-radius: 10px; background: #f1f2f7; cursor: pointer; }
+        .name-chip:hover { background: #e3e6f7; }
+        .name-extract { margin-top: 14px; font-size: 13px; color: #444; }
+        .name-extract summary { cursor: pointer; color: #4a5bd4; }
+        .name-piece { margin-bottom: 22px; padding-bottom: 8px; border-bottom: 2px solid #eee; }
+        .name-piece-label { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: #888; margin-bottom: 4px; }
+        .name-error { color: #c0392b; }
+        .name-ask-ai { margin-top: 12px; }
         .help-dialog .settings-nav { overflow-y: auto; }
         .help-nav-label { color: var(--ui-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; padding: 12px 10px 4px; }
         .help-subtab { padding-left: 18px; font-size: 13px; }
@@ -834,6 +877,76 @@
         .help-notice { color: var(--ui-muted); font-size: 13px; }
         .help-pane details summary { cursor: pointer; color: var(--ui-accent); font-size: 13px; }
         .help-license { margin-top: 16px; padding: 12px; background: var(--ui-bg); border: 1px solid var(--ui-border); border-radius: 8px; font-size: 12px; white-space: pre-wrap; max-height: 240px; overflow: auto; }
+
+/* Databases panel (PubChem, ChEMBL, PubMed), docked right of the canvas */
+        .db-panel {
+            width: 400px;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            border-left: 1px solid var(--ui-border);
+            background: var(--ui-surface);
+            color: var(--ui-text);
+            font-size: 13px;
+            min-height: 0;
+        }
+        .db-panel[hidden] { display: none; }
+        .db-head { display: flex; align-items: center; gap: 8px; padding: 10px 12px 6px 14px; }
+        .db-title { font-family: ui-serif, Georgia, 'Times New Roman', serif; font-size: 17px; }
+        .db-sources { color: var(--ui-muted); font-size: 11px; flex: 1; }
+        .db-close { border: none; background: transparent; color: var(--ui-muted); width: 28px; height: 28px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .db-close:hover { background: var(--ui-hover); color: var(--ui-text); }
+        .db-search, .db-controls { display: flex; gap: 6px; padding: 4px 12px 8px; flex-wrap: wrap; }
+        .db-controls { padding: 0 0 10px; }
+        .db-input, .db-select { font: inherit; font-size: 13px; color: var(--ui-text); background: var(--ui-surface); border: 1px solid var(--ui-border); border-radius: 8px; padding: 5px 8px; min-width: 0; }
+        .db-input { flex: 1; }
+        .db-controls .db-select[name="method"] { flex: 1; }
+        .db-input:focus, .db-select:focus { outline: none; border-color: var(--ui-accent); box-shadow: 0 0 0 3px rgba(201, 100, 66, 0.15); }
+        .db-btn { font: inherit; font-size: 12px; border: 1px solid var(--ui-border); background: var(--ui-bg); color: var(--ui-text); border-radius: 7px; padding: 4px 10px; cursor: pointer; white-space: nowrap; }
+        .db-btn:hover { background: var(--ui-hover); }
+        .db-btn.db-primary { background: var(--ui-accent); border-color: var(--ui-accent); color: #fff; }
+        .db-btn.db-primary:hover { filter: brightness(0.95); }
+        .db-link { border: none; background: none; color: var(--ui-accent); font: inherit; cursor: pointer; padding: 0; text-decoration: underline; }
+        .db-subject { padding: 0 14px 8px; color: var(--ui-muted); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .db-subject b { color: var(--ui-text); font-weight: 600; }
+        .db-subject code, .db-panel code { font-size: 11px; background: var(--ui-hover); padding: 1px 4px; border-radius: 4px; word-break: break-all; }
+        .db-tabs { display: flex; gap: 2px; padding: 0 10px; border-bottom: 1px solid var(--ui-border); }
+        .db-tabs button { font: inherit; font-size: 12px; border: none; background: transparent; color: var(--ui-muted); padding: 7px 8px; border-bottom: 2px solid transparent; cursor: pointer; }
+        .db-tabs button:hover { color: var(--ui-text); }
+        .db-tabs button.active { color: var(--ui-text); border-bottom-color: var(--ui-accent); font-weight: 600; }
+        .db-body { flex: 1; overflow-y: auto; padding: 12px 14px 16px; min-height: 0; }
+        .db-panel a { color: var(--ui-accent); text-decoration: none; }
+        .db-panel a:hover { text-decoration: underline; }
+        .db-status { color: var(--ui-muted); padding: 10px 2px; line-height: 1.5; }
+        .db-error { color: #b42318; }
+        .db-note { color: var(--ui-muted); font-size: 12px; margin: 2px 0 8px; }
+        .db-spinner { display: inline-block; width: 12px; height: 12px; margin-right: 8px; vertical-align: -1px; border: 2px solid var(--ui-border); border-top-color: var(--ui-accent); border-radius: 50%; animation: db-spin 0.8s linear infinite; }
+        @keyframes db-spin { to { transform: rotate(360deg); } }
+        .db-card { display: flex; gap: 10px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--ui-border); }
+        .db-thumb { width: 64px; height: 64px; object-fit: contain; background: #fff; border: 1px solid var(--ui-border); border-radius: 6px; flex-shrink: 0; }
+        .db-thumb-lg { width: 110px; height: 110px; }
+        .db-card-text { flex: 1; min-width: 0; }
+        .db-card-name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-transform: none; }
+        .db-card-meta { color: var(--ui-muted); font-size: 12px; margin-top: 1px; }
+        .db-card-actions { display: flex; flex-direction: column; gap: 4px; }
+        .db-detail-head { display: flex; gap: 12px; margin-bottom: 10px; }
+        .db-detail-title { font-size: 15px; font-weight: 600; margin-bottom: 2px; }
+        .db-iupac { color: var(--ui-muted); font-size: 12px; line-height: 1.35; word-break: break-word; }
+        .db-row-actions { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+        .db-table { width: 100%; border-collapse: collapse; }
+        .db-table td, .db-table th { padding: 5px 6px; border-bottom: 1px solid var(--ui-border); vertical-align: top; text-align: left; }
+        .db-table th { color: var(--ui-muted); font-weight: 500; font-size: 11px; }
+        .db-table td:first-child { color: var(--ui-muted); width: 44%; }
+        .db-acts td:first-child { color: var(--ui-text); width: auto; }
+        .db-num { text-align: right !important; font-variant-numeric: tabular-nums; }
+        .db-section { font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ui-muted); margin: 14px 0 6px; }
+        .db-synonyms { display: flex; flex-wrap: wrap; gap: 4px; }
+        .db-synonyms span { background: var(--ui-bg); border: 1px solid var(--ui-border); border-radius: 10px; padding: 1px 8px; font-size: 12px; }
+        .db-list { margin: 0 0 0 18px; padding: 0; line-height: 1.5; }
+        .db-paper { padding: 8px 0; border-bottom: 1px solid var(--ui-border); }
+        .db-paper-title { font-weight: 500; line-height: 1.35; }
+        #dbRibbonBtn.active { background: var(--ui-active); }
+        .db-acts tr.db-single td { opacity: 0.55; }
 
 /* Settings dialog (File › Settings) */
         .settings-backdrop {
@@ -1190,6 +1303,7 @@
                     <button class="ribbon-btn" data-action="clean" title="Clean up the layout" aria-label="Clean up the layout"><svg class="ribbon-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 21 10-10"/><path d="M15 3v2M15 11v2M11 7h2M17 7h2M18 4l-1 1M12 10l1-1M18 10l-1-1"/></svg><span class="ribbon-label">Clean up</span></button>
                     <button class="ribbon-btn" data-action="expand" title="Expand text labels (NO2, COOH, OMe…) into atoms and bonds: the selected ones, or all" aria-label="Expand text labels (NO2, COOH, OMe…) into atoms and bonds: the selected ones, or all"><svg class="ribbon-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="m21 3-7 7"/><path d="m3 21 7-7"/></svg><span class="ribbon-label">Expand</span></button>
                     <button class="ribbon-btn" data-action="png" title="Export as PNG image" aria-label="Export as PNG image"><svg class="ribbon-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/></svg><span class="ribbon-label">PNG</span></button>
+                    <button class="ribbon-btn" data-action="db-toggle" id="dbRibbonBtn" title="Databases: PubChem, ChEMBL, PubMed" aria-label="Databases"><svg class="ribbon-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.66 3.58 3 8 3s8-1.34 8-3V5"/><path d="M4 11v6c0 1.66 3.58 3 8 3s8-1.34 8-3v-6"/></svg><span class="ribbon-label">Databases</span></button>
                     <span class="ribbon-sep" aria-hidden="true"></span>
                     <button class="ribbon-btn icon-only" data-action="delete" title="Delete the selection" aria-label="Delete the selection"><svg class="ribbon-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
                     <button class="ribbon-btn icon-only" data-action="clear" title="Clear: remove everything from the drawing area (Ctrl+Z brings it back)" aria-label="Clear: remove everything from the drawing area (Ctrl+Z brings it back)"><svg class="ribbon-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m7 21-4.3-4.3a1 1 0 0 1 0-1.4l10-10a1 1 0 0 1 1.4 0l5.6 5.6a1 1 0 0 1 0 1.4L11 21"/><path d="M22 21H7"/><path d="m5 11 9 9"/></svg></button>
@@ -1229,8 +1343,20 @@
                     </div>
                     <div class="menu-cat" role="menuitem" aria-haspopup="true"><span>Structure</span><svg class="menu-cat-chevron" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
                         <div class="menu-panel submenu" role="menu">
+                            <div class="menu-item" data-action="name" role="menuitem"><span>Name structure…</span><span class="menu-kbd">Ctrl+Alt+N</span></div>
+                            <div class="menu-sep" role="separator"></div>
                             <div class="menu-item" data-action="clean" role="menuitem"><span>Clean up layout</span></div>
                             <div class="menu-item" data-action="expand" role="menuitem"><span>Expand labels</span></div>
+                        </div>
+                    </div>
+                    <div class="menu-cat" role="menuitem" aria-haspopup="true"><span>Database</span><svg class="menu-cat-chevron" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
+                        <div class="menu-panel submenu" role="menu">
+                            <div class="menu-item" data-action="db-search" role="menuitem"><span>Search compounds…</span></div>
+                            <div class="menu-sep" role="separator"></div>
+                            <div class="menu-item" data-action="db-identify" role="menuitem"><span>Identify the drawing</span></div>
+                            <div class="menu-item" data-action="db-similar" role="menuitem"><span>Similar compounds</span></div>
+                            <div class="menu-item" data-action="db-literature" role="menuitem"><span>Literature (PubMed)</span></div>
+                            <div class="menu-item" data-action="db-bioactivity" role="menuitem"><span>Bioactivity (ChEMBL)</span></div>
                         </div>
                     </div>
                     <div class="menu-cat" role="menuitem" aria-haspopup="true"><span>View</span><svg class="menu-cat-chevron" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
@@ -1261,6 +1387,7 @@
                     <div class="expanded-menu" id="selectMenu">
                         <div class="expanded-menu-item icon-only" data-select="lasso" title="Lasso select" aria-label="Lasso select"><svg class="menu-icon" viewBox="0 0 32 32" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="17" cy="12" rx="11" ry="7" stroke-dasharray="3.5 2.5"/><path d="M10 17.5c-2.5 2-3 4.5-1.5 6.5s1 4-1 5"/></svg></div>
                         <div class="expanded-menu-item icon-only" data-select="rect" title="Rectangle select" aria-label="Rectangle select"><svg class="menu-icon" viewBox="0 0 32 32" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="7" width="22" height="18" stroke-dasharray="3.5 2.5"/></svg></div>
+                        <div class="expanded-menu-item icon-only" data-select="circle" title="Circle select (drag from the centre)" aria-label="Circle select"><svg class="menu-icon" viewBox="0 0 32 32" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="16" cy="16" r="11" stroke-dasharray="3.5 2.5"/><path d="M14 16h4M16 14v4"/></svg></div>
                     </div>
                 </div>
                 <!-- 1. Bonds: single, double, triple, up/down stereo, both -->
@@ -1423,7 +1550,7 @@
                     <div class="status-item">
                         <span id="valenceCheck" style="color: #FF0000; font-weight: 600;"></span>
                     </div>
-                    <div class="status-item">
+                    <div class="status-item status-hint-item">
                         <span id="hint"></span>
                     </div>
                     <div class="status-item">

@@ -1,0 +1,59 @@
+{
+ "activities": [
+  {
+   "assay_description": "Inhibition of HER2 (unknown origin) incubated for 1 hr in presence of ATP by Kinase-Glo Plus luminescence kinase assay",
+   "document_chembl_id": "CHEMBL5214926",
+   "pchembl_value": "10.22",
+   "relation": "=",
+   "standard_relation": "=",
+   "standard_type": "IC50",
+   "standard_units": "nM",
+   "standard_value": "0.06",
+   "target_chembl_id": "CHEMBL1824",
+   "target_organism": "Homo sapiens",
+   "target_pref_name": "Receptor tyrosine-protein kinase erbB-2",
+   "type": "IC50",
+   "units": "nM",
+   "value": "0.06"
+  },
+  {
+   "assay_description": "Inhibition of EGFR (unknown origin) incubated for 1 hr in presence of ATP by Kinase-Glo Plus luminescence kinase assay",
+   "document_chembl_id": "CHEMBL5214926",
+   "pchembl_value": "9.96",
+   "relation": "=",
+   "standard_relation": "=",
+   "standard_type": "IC50",
+   "standard_units": "nM",
+   "standard_value": "0.11",
+   "target_chembl_id": "CHEMBL203",
+   "target_organism": "Homo sapiens",
+   "target_pref_name": "Epidermal growth factor receptor",
+   "type": "IC50",
+   "units": "nM",
+   "value": "0.11"
+  },
+  {
+   "assay_description": "Antiproliferative activity against human K562 cells after 72 hrs by MTT assay",
+   "document_chembl_id": "CHEMBL4422627",
+   "pchembl_value": "9.82",
+   "relation": "=",
+   "standard_relation": "=",
+   "standard_type": "IC50",
+   "standard_units": "nM",
+   "standard_value": "0.15",
+   "target_chembl_id": "CHEMBL385",
+   "target_organism": "Homo sapiens",
+   "target_pref_name": "K562",
+   "type": "IC50",
+   "units": "nM",
+   "value": "0.15"
+  }
+ ],
+ "page_meta": {
+  "limit": 3,
+  "next": "/chembl/api/data/activity.json?limit=3&offset=3&molecule_chembl_id=CHEMBL941&pchembl_value__isnull=false&order_by=-pchembl_value&only=target_chembl_id%2Ctarget_pref_name%2Ctarget_organism%2Cstandard_type%2Cstandard_relation%2Cstandard_value%2Cstandard_units%2Cpchembl_value%2Cassay_description%2Cdocument_chembl_id",
+  "offset": 0,
+  "previous": null,
+  "total_count": 833
+ }
+}
