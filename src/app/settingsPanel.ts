@@ -4,6 +4,7 @@
  *   AI      — API keys for Claude, ChatGPT and Grok.
  * Changes apply at once and are saved in this browser.
  */
+import { STANDALONE } from './runtime';
 import { PROVIDERS, ProviderId, testApiKey } from './claude';
 import {
   AppSettings,
@@ -205,7 +206,7 @@ export function initSettingsPanel(opts: SettingsPanelOptions): SettingsPanel {
   }
 
   // Which providers have a key in .env.local (the dev server answers yes/no, never the key).
-  fetch('/api/tsdraw/key-status')
+  if (!STANDALONE) fetch('/api/tsdraw/key-status')
     .then((r) => (r.ok ? r.json() : {}))
     .then((s: Partial<Record<ProviderId, boolean>>) => {
       envKeys = s ?? {};

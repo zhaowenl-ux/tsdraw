@@ -12,6 +12,7 @@
  * the next question is sent to the new provider with the whole history translated to its format.
  */
 
+import { aiRequest, API_KEY_HEADER, STANDALONE } from './runtime';
 import type { AssistantTool } from './databases';
 
 export type ProviderId = 'claude' | 'openai' | 'grok';
@@ -70,9 +71,9 @@ export function getProvider(id: ProviderId): Provider {
 }
 
 const ENDPOINTS: Record<ProviderId, string> = {
-  claude: '/api/anthropic/v1/messages',
-  openai: '/api/openai/v1/responses',
-  grok: '/api/xai/v1/chat/completions',
+  claude: '/v1/messages',
+  openai: '/v1/responses',
+  grok: '/v1/chat/completions',
 };
 const MAX_TOOL_ROUNDS = 8;
 const MAX_TOKENS = 2048;
@@ -283,13 +284,9 @@ function errorDetail(body: any, fallback: string): string {
  * Header that carries an API key entered in Settings › AI. The dev server uses it instead of the
  * key in .env.local, and strips it before forwarding the request to the provider.
  */
-export const API_KEY_HEADER = 'x-tsdraw-api-key';
+export { API_KEY_HEADER };
 
-const MODELS_ENDPOINTS: Record<ProviderId, string> = {
-  claude: '/api/anthropic/v1/models',
-  openai: '/api/openai/v1/models',
-  grok: '/api/xai/v1/models',
-};
+const MODELS_ENDPOINT = '/v1/models';
 
 /**
  * Check an API key by listing the provider's models (costs nothing). An empty key tests the
@@ -303,9 +300,13 @@ export async function testApiKey(
   const provider = getProvider(id);
   let response: Response;
   try {
-    response = await fetchFn(MODELS_ENDPOINTS[id], { headers: key ? { [API_KEY_HEADER]: key } : {} });
+    if (STANDALONE && !key.trim()) return 'Enter a key first (this copy has no server with a .env.local key).';
+    const req = aiRequest(id, MODELS_ENDPOINT, key);
+    response = await fetchFn(req.url, { headers: req.headers });
   } catch {
-    return 'Cannot reach the dev server. Start the app with "npm run dev".';
+    return STANDALONE
+      ? `Cannot reach the ${provider.name} API (check the internet connection; some providers do not allow calls from a web page).`
+      : 'Cannot reach the dev server. Start the app with "npm run dev".';
   }
   if (response.ok) return null;
   const body = await response.json().catch(() => null);
@@ -400,13 +401,21 @@ export class ChemistryChat {
     const adapter = ADAPTERS[provider.id];
     let response: Response;
     try {
-      response = await this.fetchFn(ENDPOINTS[provider.id], {
+      const req = aiRequest(provider.id, ENDPOINTS[provider.id], this.apiKeys[provider.id]);
+      if (STANDALONE && !this.apiKeys[provider.id]?.trim())
+        throw new Error(`No ${provider.name} API key: add one in File › Settings › AI.`);
+      response = await this.fetchFn(req.url, {
         method: 'POST',
-        headers: { 'content-type': 'application/json', ...this.keyHeader(provider.id) },
+        headers: { 'content-type': 'application/json', ...req.headers },
         body: JSON.stringify(adapter.request(this.model, this.history, [DRAW_TOOL, ...this.tools])),
       });
-    } catch {
-      throw new Error(`Cannot reach the ${provider.name} API. Start the app with "npm run dev" (the dev server forwards the requests).`);
+    } catch (err) {
+      if (err instanceof Error && err.message.startsWith('No ')) throw err;
+      throw new Error(
+        STANDALONE
+          ? `Cannot reach the ${provider.name} API (check the internet connection; some providers do not allow calls from a web page).`
+          : `Cannot reach the ${provider.name} API. Start the app with "npm run dev" (the dev server forwards the requests).`
+      );
     }
     const body = await response.json().catch(() => null);
     if (!response.ok) {
@@ -423,10 +432,6 @@ export class ChemistryChat {
     return adapter.reply(body);
   }
 
-  private keyHeader(id: ProviderId): Record<string, string> {
-    const key = this.apiKeys[id]?.trim();
-    return key ? { [API_KEY_HEADER]: key } : {};
-  }
 }
 
 /** Kept for code written before the other providers were added. */

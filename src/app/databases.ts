@@ -4,6 +4,8 @@
  * No UI here: the Databases panel (dbPanel.ts) and the AI assistant's tools both use this module.
  */
 
+import { STANDALONE } from './runtime';
+
 const PUG = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug';
 const EUTILS = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils';
 const CHEMBL = 'https://www.ebi.ac.uk/chembl/api/data';
@@ -313,7 +315,7 @@ export class Databases {
       return await ask(OPSIN);
     } catch (err) {
       // Some browsers block the direct call (CORS, blockers): go through the tsdraw server's proxy.
-      if (err instanceof DatabaseError && err.status === undefined && typeof window !== 'undefined') {
+      if (err instanceof DatabaseError && err.status === undefined && typeof window !== 'undefined' && !STANDALONE) {
         return ask(OPSIN_PROXY);
       }
       throw err;

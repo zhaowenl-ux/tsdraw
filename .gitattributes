@@ -1,0 +1,3 @@
+# Built distribution files: keep them byte-for-byte as built.
+release/** -text binary
+*.ico binary

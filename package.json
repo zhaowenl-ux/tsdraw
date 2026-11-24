@@ -10,6 +10,9 @@
     "build": "tsc -p tsconfig.json --noEmit && vite build",
     "build:app": "tsc -p tsconfig.json --noEmit && vite build --config vite.app.config.ts",
     "preview:app": "vite preview --config vite.app.config.ts",
+    "build:desktop": "node desktop/build.mjs",
+    "release": "node desktop/release.mjs",
+    "build:standalone": "tsc -p tsconfig.json --noEmit && vite build --config vite.standalone.config.ts",
     "test": "vitest"
   },
   "devDependencies": {
