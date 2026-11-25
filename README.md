@@ -2,6 +2,8 @@
 
 TypeScript-based chemical structure drawing application, built from scratch.
 
+▶ **[Watch the 30-second demo](docs/tsdraw-demo.mp4)**: paste a drug name or CAS number to get the structure, then name it (common, INN, IUPAC and trade names).
+
 ## Download
 
 Current version: **0.20**
