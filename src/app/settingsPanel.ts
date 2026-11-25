@@ -129,6 +129,14 @@ export function initSettingsPanel(opts: SettingsPanelOptions): SettingsPanel {
   refreshers.push(() => (grid.checked = settings.drawing.showGrid));
   drawingRows.append(row('Show grid', 'Light grid behind the drawing', grid));
 
+  const circles = el('input', { type: 'checkbox', class: 'settings-switch', 'aria-label': 'Aromatic circles' });
+  circles.addEventListener('change', () => {
+    settings.drawing.aromaticCircles = circles.checked;
+    changed();
+  });
+  refreshers.push(() => (circles.checked = settings.drawing.aromaticCircles));
+  drawingRows.append(row('Aromatic circles', 'Draw aromatic rings with a circle instead of Kekulé double bonds', circles));
+
   const reset = el('button', { type: 'button', class: 'settings-btn' }, 'Reset to defaults');
   reset.addEventListener('click', () => {
     Object.assign(settings.drawing, DEFAULT_DRAWING);

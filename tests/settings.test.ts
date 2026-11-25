@@ -2,13 +2,13 @@ import { describe, expect, it } from 'vitest';
 import { DrawingStyle } from '../src/draw/DrawingStyle';
 import { Point2D } from '../src/draw/Point2D';
 import { Editor } from '../src/app/editor';
-import { applyDrawingStyle, defaultSettings, loadSettings, sanitize, saveSettings } from '../src/app/settings';
+import { applyDrawingStyle, DEFAULT_DRAWING, defaultSettings, loadSettings, sanitize, saveSettings } from '../src/app/settings';
 
 describe('settings', () => {
   it('falls back to defaults for missing or broken values and clamps numbers', () => {
     const s = sanitize({ drawing: { bondLength: 500, bondWidth: 'x', fontFamily: 'Comic Sans', bondColor: 'red' }, apiKeys: { claude: ' k ' } });
     expect(s.drawing.bondLength).toBe(80);
-    expect(s.drawing.bondWidth).toBe(1.5);
+    expect(s.drawing.bondWidth).toBe(DEFAULT_DRAWING.bondWidth);
     expect(s.drawing.fontFamily).toBe('Arial, sans-serif');
     expect(s.drawing.bondColor).toBe('#000000');
     expect(s.apiKeys).toEqual({ claude: 'k', openai: '', grok: '' });

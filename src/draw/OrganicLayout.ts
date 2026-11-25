@@ -351,6 +351,11 @@ function selectRings(cycles: number[][]): number[][] {
   return kept;
 }
 
+/** The smallest set of rings (at most MAX_RING_SIZE atoms) covering every ring bond, as ordered atom ids. */
+export function smallRings(adjacency: Map<number, number[]>): number[][] {
+  return selectRings(findCycles(adjacency));
+}
+
 function edgeKey(a: number, b: number): string {
   return a < b ? `${a}-${b}` : `${b}-${a}`;
 }

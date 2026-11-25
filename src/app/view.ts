@@ -9,6 +9,7 @@ import { Editor, Tool } from './editor';
 import { circlePolygon, moveToward } from './geometry';
 import { leadingTokenLength, reverseLabel, trailingTokenLength } from './labels';
 import { Arrow, arrowShape } from './arrows';
+import { aromaticRings, ringBondKeys } from './aromatic';
 
 /** Radius of the white disc behind an element label, for the 14 px default font (scales with the font size). */
 const LABEL_DISC_RADIUS = 9;
@@ -81,12 +82,18 @@ export function drawScene(state: SceneState): void {
   const problems = editor.valenceProblems();
   const unsettled = state.unsettled ? { ids: new Set(state.unsettled.ids), pivot: state.unsettled.pivot } : null;
 
-  // Aromatic bonds are displayed in a Kekulé form (alternating single/double).
+  // Aromatic bonds are displayed in a Kekulé form (alternating single/double) …
   const kekule = kekulize(molecule);
+  // … or, with aromatic circles on, aromatic rings get single lines and an inner circle.
+  const circleRings = style.aromaticCircles ? aromaticRings(molecule, kekule) : [];
+  const circleBonds = ringBondKeys(circleRings);
 
   // Bonds first, so atom discs sit on top of them.
   for (const modelBond of molecule.getBonds()) {
-    const bond = displayBond(modelBond, kekule);
+    let bond = displayBond(modelBond, kekule);
+    if (circleBonds.has(bondKey(bond.atomId1, bond.atomId2)) && bond.type !== BondType.SINGLE) {
+      bond = new Bond(bond.atomId1, bond.atomId2, BondType.SINGLE, bond.chirality);
+    }
     const endpoints = bondEndpoints(editor, bond, labelled, labelTrim);
     if (!endpoints) continue;
     const [start, end] = endpoints;
@@ -108,6 +115,8 @@ export function drawScene(state: SceneState): void {
       bondDrawer.draw(bond, start, end, renderer, undefined, centre);
     }
   }
+
+  for (const ring of circleRings) drawAromaticCircle(renderer, editor, ring, unsettled);
 
   // Atoms.
   for (const atom of molecule.getAtoms()) {
@@ -293,6 +302,40 @@ function drawTextLabel(
     renderer.drawText(run.t, new Point2D(x, y), style.atomColor, run.sub ? subSize : size, font, 'left', weight);
     x += run.width;
   }
+}
+
+/**
+ * Inner circle of an aromatic ring (IUPAC GR-6.1): centred in the ring and kept clear of the bonds
+ * by about the gap of a ring double bond. Drawn in the selection colour when the whole ring is selected.
+ */
+function drawAromaticCircle(
+  renderer: CanvasRenderer,
+  editor: Editor,
+  ring: number[],
+  unsettled: { ids: Set<number>; pivot: number } | null
+): void {
+  const style = renderer.getStyle();
+  const pts = ring.map((id) => editor.getPosition(id));
+  if (pts.some((p) => !p)) return;
+  const points = pts as Point2D[];
+  const cx = points.reduce((s, p) => s + p.x, 0) / points.length;
+  const cy = points.reduce((s, p) => s + p.y, 0) / points.length;
+  // Distance from the centre to the nearest ring edge (the apothem of a regular ring).
+  let apothem = Infinity;
+  let edgeSum = 0;
+  points.forEach((p, i) => {
+    const q = points[(i + 1) % points.length];
+    const len = Math.hypot(q.x - p.x, q.y - p.y) || 1;
+    edgeSum += len;
+    apothem = Math.min(apothem, Math.abs((q.x - p.x) * (p.y - cy) - (p.x - cx) * (q.y - p.y)) / len);
+  });
+  const gap = (edgeSum / points.length) * style.doubleLineSpacing * 2.2;
+  const radius = apothem - gap;
+  if (!(radius > 2)) return;
+  const selected = ring.every((id, i) => editor.isSelected(id, ring[(i + 1) % ring.length]));
+  const held = unsettled !== null && ring.every((id) => unsettled.ids.has(id) || id === unsettled.pivot);
+  const color = held ? UNSETTLED_COLOR : selected ? style.selectionColor : style.bondColor;
+  renderer.drawCircle(new Point2D(cx, cy), radius, color, undefined, style.bondWidth);
 }
 
 /** The bond as it should be drawn: aromatic bonds take their Kekulé single/double order. */

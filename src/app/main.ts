@@ -15,7 +15,7 @@ import { ChatEvent, ChemistryChat, PROVIDERS, ProviderId, getProvider } from './
 import { DEFAULT_BRIDGE_PORT, connectDesktopBridge } from './desktopBridge';
 import { drawScene } from './view';
 import { APP_VERSION } from './version';
-import { applyDrawingStyle, loadSettings } from './settings';
+import { applyDrawingStyle, loadSettings, saveSettings } from './settings';
 import { initSettingsPanel } from './settingsPanel';
 import { initHelpDialog } from './help';
 import { Databases, databaseTools } from './databases';
@@ -885,6 +885,7 @@ const settingsPanel = initSettingsPanel({
   settings,
   onDrawingChange: (drawing) => {
     applyDrawingStyle(config.style, drawing);
+    syncAromaticButton();
     config.bondLength = drawing.bondLength;
     editor.setBondLength(drawing.bondLength);
     redraw();
@@ -917,6 +918,29 @@ const dbPanel = initDbPanel({
   },
 });
 chat.tools = databaseTools(databases, () => (editor.atomCount() > 0 ? toSmiles(editor).text : ''));
+// ---------- Aromatic rings: Kekulé ⇄ circle display ----------
+
+/** Show the current aromatic display on the top-bar button (pressed = circles). */
+function syncAromaticButton(): void {
+  const on = settings.drawing.aromaticCircles;
+  const btn = byIdOrNull('aromaticRibbonBtn');
+  btn?.classList.toggle('active', on);
+  btn?.setAttribute('aria-pressed', String(on));
+  const label = byIdOrNull('aromaticRibbonLabel');
+  if (label) label.textContent = on ? 'Kekulé' : 'Aromatic';
+  btn?.setAttribute('title', on ? 'Show aromatic rings as Kekulé structures (alternating double bonds)' : 'Show aromatic rings with circles');
+}
+
+function toggleAromatic(): void {
+  settings.drawing.aromaticCircles = !settings.drawing.aromaticCircles;
+  saveSettings(settings);
+  applyDrawingStyle(config.style, settings.drawing);
+  syncAromaticButton();
+  redraw();
+  showNotice(settings.drawing.aromaticCircles ? 'Aromatic rings shown with circles' : 'Aromatic rings shown as Kekulé structures');
+}
+syncAromaticButton();
+
 function syncDbButton(): void {
   byIdOrNull('dbRibbonBtn')?.classList.toggle('active', dbPanel.isOpen());
 }
@@ -968,6 +992,7 @@ const actions: Record<string, () => void> = {
   clean: cleanUp,
   expand: expandLabels,
   'toggle-ai': () => byId('claudeToggle').click(),
+  'toggle-aromatic': toggleAromatic,
   'db-toggle': () => {
     dbPanel.toggle();
     syncDbButton();
@@ -979,6 +1004,7 @@ const actions: Record<string, () => void> = {
   'db-bioactivity': () => openDb('bioactivity'),
   tutorial: () => helpDialog.open('tutorial'),
   help: () => helpDialog.open('help'),
+  guidelines: () => helpDialog.open('guidelines'),
   about: () => helpDialog.open('about'),
 };
 

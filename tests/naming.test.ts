@@ -43,6 +43,12 @@ describe('PubChem synonyms', () => {
     expect(r.others).toEqual(['Gleevec', 'Imatinib free base']);
   });
 
+  it('drops variants of the main name and takes (TM) trade names', () => {
+    const r = classifySynonyms(['Imatinib, 21', 'Imatinib (Standard)', 'Imatinib - Gleevec', 'Gleevec(TM)', 'Imatinib free base'], ['Imatinib']);
+    expect(r.others).toEqual(['Imatinib free base']);
+    expect(r.brands).toEqual(['Gleevec']);
+  });
+
   it('takes KEGG trade names and drops noisy variants', () => {
     const r = classifySynonyms(
       ['Glamox', 'Glamox (TN)', 'Gleevec (TN)', 'L01XE01', '1iep', 'IMATINIB [USAN]', 'STI', 'Imatinib (INN)', 'RefChem:76L01XE01', 'imatinib-CD3', '152459-95-5 (free base)', 'Imatinib (STI571)', 'Imatinibum'],

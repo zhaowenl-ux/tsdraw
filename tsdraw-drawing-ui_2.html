@@ -875,6 +875,8 @@
         .help-keys th { text-align: left; font-size: 12px; color: var(--ui-muted); text-transform: uppercase; letter-spacing: 0.05em; padding: 14px 8px 4px; }
         .help-about td:first-child { width: 120px; color: var(--ui-muted); }
         .help-notice { color: var(--ui-muted); font-size: 13px; }
+        .help-ref { font-size: 13px; color: var(--ui-muted); }
+        .help-ref a { font-weight: 600; }
         .help-pane details summary { cursor: pointer; color: var(--ui-accent); font-size: 13px; }
         .help-license { margin-top: 16px; padding: 12px; background: var(--ui-bg); border: 1px solid var(--ui-border); border-radius: 8px; font-size: 12px; white-space: pre-wrap; max-height: 240px; overflow: auto; }
 
@@ -945,7 +947,7 @@
         .db-list { margin: 0 0 0 18px; padding: 0; line-height: 1.5; }
         .db-paper { padding: 8px 0; border-bottom: 1px solid var(--ui-border); }
         .db-paper-title { font-weight: 500; line-height: 1.35; }
-        #dbRibbonBtn.active { background: var(--ui-active); }
+        #dbRibbonBtn.active, #aromaticRibbonBtn.active { background: var(--ui-active); }
         .db-acts tr.db-single td { opacity: 0.55; }
 
 /* Settings dialog (File › Settings) */
@@ -1303,6 +1305,7 @@
                     <button class="ribbon-btn" data-action="clean" title="Clean up the layout" aria-label="Clean up the layout"><svg class="ribbon-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 21 10-10"/><path d="M15 3v2M15 11v2M11 7h2M17 7h2M18 4l-1 1M12 10l1-1M18 10l-1-1"/></svg><span class="ribbon-label">Clean up</span></button>
                     <button class="ribbon-btn" data-action="expand" title="Expand text labels (NO2, COOH, OMe…) into atoms and bonds: the selected ones, or all" aria-label="Expand text labels (NO2, COOH, OMe…) into atoms and bonds: the selected ones, or all"><svg class="ribbon-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="m21 3-7 7"/><path d="m3 21 7-7"/></svg><span class="ribbon-label">Expand</span></button>
                     <button class="ribbon-btn" data-action="png" title="Export as PNG image" aria-label="Export as PNG image"><svg class="ribbon-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/></svg><span class="ribbon-label">PNG</span></button>
+                    <button class="ribbon-btn" data-action="toggle-aromatic" id="aromaticRibbonBtn" title="Aromatic rings: switch between Kekulé bonds and aromatic circles" aria-label="Switch aromatic rings between Kekulé and circle form" aria-pressed="false"><svg class="ribbon-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2.5 20.2 7.25v9.5L12 21.5l-8.2-4.75v-9.5z"/><circle cx="12" cy="12" r="4.6"/></svg><span class="ribbon-label" id="aromaticRibbonLabel">Aromatic</span></button>
                     <button class="ribbon-btn" data-action="db-toggle" id="dbRibbonBtn" title="Databases: PubChem, ChEMBL, PubMed" aria-label="Databases"><svg class="ribbon-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.66 3.58 3 8 3s8-1.34 8-3V5"/><path d="M4 11v6c0 1.66 3.58 3 8 3s8-1.34 8-3v-6"/></svg><span class="ribbon-label">Databases</span></button>
                     <span class="ribbon-sep" aria-hidden="true"></span>
                     <button class="ribbon-btn icon-only" data-action="delete" title="Delete the selection" aria-label="Delete the selection"><svg class="ribbon-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
@@ -1368,6 +1371,7 @@
                         <div class="menu-panel submenu" role="menu">
                             <div class="menu-item" data-action="tutorial" role="menuitem"><span>Quick tutorial</span></div>
                             <div class="menu-item" data-action="help" role="menuitem"><span>Help</span><span class="menu-kbd">F1</span></div>
+                            <div class="menu-item" data-action="guidelines" role="menuitem"><span>Drawing guidelines</span></div>
                             <div class="menu-item" data-action="about" role="menuitem"><span>About TSDraw</span></div>
                         </div>
                     </div>

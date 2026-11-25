@@ -130,7 +130,8 @@ export function classifySynonyms(
       continue;
     }
     // KEGG marks trade names "(TN)"; "(INN)", "(USAN)"... mark a name already given.
-    const tn = s.match(/^(.+?)\s*\(TN\)$/);
+    // "Gleevec(TM)", "Gleevec®" are trade names too.
+    const tn = s.match(/^(.+?)\s*(?:\((?:TN|TM)\)|™|®)$/i);
     if (tn) {
       const b = tn[1];
       if (!brands.some((x) => x.toLowerCase() === b.toLowerCase()) && brands.length < 8) brands.push(b);
@@ -157,8 +158,14 @@ export function classifySynonyms(
     if (s.length > 45 && /[\d\]()]/.test(s)) continue;
     if (others.length < 12) others.push(s);
   }
+  // Variants of a name already shown: "Imatinib, 21", "Imatinib (Standard)", "Imatinib - Gleevec".
+  const main = exclude.filter(Boolean).map((e) => e.toLowerCase());
+  const variant = (x: string) => {
+    const l = x.toLowerCase();
+    return main.some((m) => m.length > 2 && l.startsWith(m) && /^\s*[,([-]/.test(l.slice(m.length)));
+  };
   const isBrand = (x: string) => brands.some((b) => b.toLowerCase() === x.toLowerCase());
-  return { cas, codes, others: others.filter((o) => !isBrand(o)), brands };
+  return { cas, codes, others: others.filter((o) => !isBrand(o) && !variant(o)), brands };
 }
 
 const uniq = (list: string[], exclude: string[] = []): string[] => {

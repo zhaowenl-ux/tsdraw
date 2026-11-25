@@ -2,12 +2,13 @@
  * The Help menu's dialog: one window with three kinds of page.
  *   Quick tutorial — a few steps to draw a first molecule, and the handiest tips.
  *   Help           — the full guide, one topic per tab.
+ *   Guidelines     — drawing standards (IUPAC 2008, FDA SD-file guide, ACS graphics guide) with links.
  *   About          — version, build and license.
  * Built here from data, so the help text lives next to the code it describes.
  */
 import { APP_BUILD, APP_LICENSE, APP_VERSION } from './version';
 
-export type HelpPage = 'tutorial' | 'help' | 'about';
+export type HelpPage = 'tutorial' | 'help' | 'guidelines' | 'about';
 
 export interface HelpDialog {
   open(page: HelpPage): void;
@@ -23,6 +24,7 @@ interface Topic {
 }
 
 const kbd = (k: string) => `<kbd>${k}</kbd>`;
+const ext = (href: string, label: string) => `<a href="${href}" target="_blank" rel="noopener noreferrer">${label}</a>`;
 
 const TUTORIAL = `
 <h3 class="settings-heading">Quick tutorial</h3>
@@ -43,11 +45,73 @@ const TUTORIAL = `
   <li>Use the <b>T</b> tool to type a group such as NO2, COOH or OMe on an atom; <b>Expand</b> turns it into real atoms.</li>
   <li>Paste a SMILES, MOL file, InChI, CAS number or compound/drug name with ${kbd('Ctrl+V')}.</li>
   <li>Ask the AI panel “Draw aspirin” to put a structure on the canvas.</li>
+  <li><b>Aromatic</b> (top bar) shows aromatic rings with circles; press it again (<b>Kekulé</b>) for alternating double bonds.</li>
   <li><b>Databases</b> (top bar) looks up the drawing in PubChem, ChEMBL and PubMed.</li>
   <li><b>Structure › Name structure</b> (${kbd('Ctrl+Alt+N')}) gives the common, generic (INN), IUPAC and trade names from PubChem, Wikidata and Wikipedia.</li>
 </ul>
-<p class="settings-intro help-gap">Everything else is in <a href="#" data-help-goto="help">Help</a>.</p>
+<p class="settings-intro help-gap">Everything else is in <a href="#" data-help-goto="help">Help</a>. For drawing standards, see <a href="#" data-help-goto="guidelines">Drawing guidelines</a>.</p>
 `;
+
+/** Reference documents for good structure drawing (Help › Drawing guidelines). */
+export const GUIDELINE_REFS = {
+  iupac: 'https://publications.iupac.org/pac/pdf/2008/pdf/8002x0277.pdf',
+  fda: 'https://www.fda.gov/media/151718/download',
+  acs: 'https://pubsapp.acs.org/paragonplus/submission/general/graphics_prep.html',
+};
+
+const GUIDELINES = `
+<h3 class="settings-heading">Drawing guidelines</h3>
+<p class="settings-intro">Three published standards for clear, unambiguous structure diagrams. The points below are a short digest; open the documents for the full rules and examples.</p>
+
+<h3 class="settings-heading help-gap">1. IUPAC graphical representation standards</h3>
+<p class="help-ref">${ext(GUIDELINE_REFS.iupac, 'Graphical representation standards for chemical structure diagrams (IUPAC Recommendations 2008)')}<br>
+J. Brecher, <i>Pure Appl. Chem.</i> <b>80</b>(2), 277–410 (2008). doi:10.1351/pac200880020277</p>
+<ul class="help-list">
+  <li><b>One bond length</b> throughout a structure, long enough that atoms are at least two label-heights apart (GR-1.1). Set it once in File › Settings › Drawing.</li>
+  <li><b>Line width</b> about the stroke width of the label font (GR-1.2). Hashed and wavy bonds need at least three clearly separated hashes or half-waves (GR-1.3).</li>
+  <li><b>No short terminal bonds</b>: a bare bond end means a methyl group and a short one can be read as a minus charge. Don't use an unlabeled bond for a variable attachment point (GR-1.4).</li>
+  <li><b>Carbon labels</b>: leave carbons unlabeled where the bonds bend; label a carbon that has two collinear bonds, so they aren't read as one long bond (GR-2.1.2).</li>
+  <li><b>120° angles and zig-zag chains</b>: draw chains trans-like, without arbitrary bends. Draw bonds collinear only when they really are (alkynes, allenes, nitriles) (GR-4.1).</li>
+  <li><b>Keep double-bond geometry</b>: the drawn positions of the substituents must show the real cis/trans configuration (GR-4.1.1, GR-1.10).</li>
+  <li><b>Orientation</b>: main axis horizontal, principal groups (acyclic heteroatoms) towards the right, rings towards the bottom-left (GR-3.1). <b>Clean up</b> straightens the layout.</li>
+  <li><b>Rings</b> are regular polygons; fix overlapping substituents by rotating a chain bond, swapping neighbours or lengthening a bond rather than letting labels collide (GR-3.3, GR-4.3).</li>
+  <li><b>Aromatic circles</b> only for real delocalization, centred in the ring and drawn solid (GR-6).</li>
+  <li><b>Salts</b>: show counter-ions as separate charged components rather than a bond between them (GR-7).</li>
+</ul>
+
+<h3 class="settings-heading help-gap">2. FDA SD-file guide for regulatory submissions</h3>
+<p class="help-ref">${ext(GUIDELINE_REFS.fda, 'Quick Guide to Creating a Structure-Data File (SD File) for Type II Drug Master File (DMF) Submissions')}<br>
+U.S. Food and Drug Administration, updated February 2024.</p>
+<p>Written for DMF submissions, but a good checklist for any structure that will be registered or exchanged as a MOL/SD file:</p>
+<ul class="help-list">
+  <li><b>V2000 MOL format</b>, one SD file holding all structures (drug substance, impurities, intermediates, degradants, starting materials; not reagents or solvents), with the columns Name, CAS, Role, ID, UNII, Application number and Notes. TSDraw writes V2000 MOL files.</li>
+  <li><b>Expand abbreviations</b>: no super-atoms such as NO2, Ph or Me, and no one- or three-letter amino-acid shorthand. Use <b>Expand</b> before you save or copy.</li>
+  <li><b>No query features</b>: no X or * atoms, no query bonds, no Sgroup brackets (except multiple-group brackets for salt or hydrate stoichiometry), no text annotations for stereo.</li>
+  <li><b>Stereochemistry</b>: draw every known stereocentre with wedge or hashed bonds whose narrow end is on the stereocentre. Unknown or relative stereochemistry is stated in the Notes, not drawn.</li>
+  <li><b>Double bonds</b>: known E/Z geometry comes from the drawn coordinates; if it is unknown, use an either (crossed) double bond or a collinear layout.</li>
+  <li><b>Kekulé form</b> with alternating single and double bonds, not aromatic bond types; draw the prevalent tautomer; planar 2D drawings instead of Haworth, chair or Fischer projections, with explicit H for ring stereochemistry.</li>
+  <li><b>Salts</b>: impurities as free acids or bases; amine salts (other than quaternary) uncharged as hydrochlorides etc.; metal salts charged and charge-balanced. One covalent entity per record, except salts, hydrates and complexes.</li>
+  <li><b>Isotopes</b> only when the compound is actually labelled or enriched.</li>
+</ul>
+<h3 class="settings-heading help-gap">3. ACS Publications graphics guide</h3>
+<p class="help-ref">${ext(GUIDELINE_REFS.acs, 'Paragon Plus: ACS Publications — Preparing graphics')}<br>
+American Chemical Society, author guidelines for journal artwork.</p>
+<p>The journal house style, known as the <b>ACS Document 1996</b> settings in ChemDraw:</p>
+<table class="help-keys">
+  <tr><td>Bond length (fixed)</td><td>14.4 pt (0.2 in)</td></tr>
+  <tr><td>Chain angle</td><td>120°</td></tr>
+  <tr><td>Line width</td><td>0.6 pt</td></tr>
+  <tr><td>Bold (wedge) width</td><td>2.0 pt</td></tr>
+  <tr><td>Double-bond spacing</td><td>18% of bond length</td></tr>
+  <tr><td>Hash spacing</td><td>2.5 pt</td></tr>
+  <tr><td>Margin around labels</td><td>1.6 pt</td></tr>
+  <tr><td>Label font</td><td>Arial (Windows) or Helvetica (Mac), 10 pt</td></tr>
+</table>
+<ul class="help-list help-gap">
+  <li><b>TSDraw uses these proportions by default</b>: what matters is the ratio to the bond length, so the 30 px default bond comes with a 21 px Arial label font, 1.25 px lines, 4 px wedges and an 18% double-bond gap. Change them in File › Settings › Drawing; <b>Reset to defaults</b> returns to ACS style.</li>
+  <li><b>Size for the column</b>: single column 3.25 in (preferred), double column 7 in, at most 9.5 in long. Drawing at final size avoids reductions that make text and lines too small.</li>
+  <li><b>Legibility after reduction</b>: lettering at least 5 pt; black on white, no shading or textures; raster images at 600 dpi or more.</li>
+</ul>`;
 
 const TOPICS: Topic[] = [
   {
@@ -72,6 +136,7 @@ const TOPICS: Topic[] = [
   <li><b>Press on or next to an atom</b> to attach a ring there. It is drawn grey while the button is held: drag to turn it around the atom (${kbd('Shift')}: 30° steps), release to settle it, ${kbd('Esc')} to take it back.</li>
   <li><b>Click a bond</b> to fuse a ring onto it.</li>
   <li>Ring corners that land on existing atoms merge with them.</li>
+  <li><b>Aromatic ⇄ Kekulé</b>: the <b>Aromatic</b> button in the top bar draws aromatic rings (benzene, pyridine, pyrrole, thiophene, fused systems such as naphthalene or indole) with an inner circle; pressed again it shows <b>Kekulé</b> alternating double bonds. Rings are recognised by the Hückel 4n + 2 rule, from Kekulé or aromatic bonds alike. Only the drawing changes: SMILES and MOL files are always written in Kekulé form, as the FDA guide asks. The choice is remembered (also in File › Settings › Drawing).</li>
 </ul>`,
   },
   {
@@ -154,7 +219,7 @@ const TOPICS: Topic[] = [
     html: `
 <p>File › Settings (${kbd('Ctrl+,')}) has two pages:</p>
 <ul class="help-list">
-  <li><b>Drawing</b> — bond length, line width, label font, double-bond spacing, wedge width, bond colour and grid. Changes apply at once.</li>
+  <li><b>Drawing</b> — bond length, line width, label font, double-bond spacing, wedge width, bond colour and grid. Changes apply at once. The defaults follow the ACS journal style (see <a href="#" data-help-goto="guidelines">Drawing guidelines</a>).</li>
   <li><b>AI</b> — API keys for Claude, ChatGPT and Grok, with a button to test each.</li>
 </ul>
 <p>Settings are kept in this browser.</p>`,
@@ -220,6 +285,8 @@ export function initHelpDialog(): HelpDialog {
     <button class="settings-tab" role="tab" data-help-tab="tutorial">Quick tutorial</button>
     <div class="help-nav-label">Guide</div>
     ${TOPICS.map((t) => `<button class="settings-tab help-subtab" role="tab" data-help-tab="${t.id}">${t.title}</button>`).join('')}
+    <div class="help-nav-label">Standards</div>
+    <button class="settings-tab help-subtab" role="tab" data-help-tab="guidelines">Drawing guidelines</button>
     <div class="help-nav-spacer"></div>
     <button class="settings-tab" role="tab" data-help-tab="about">About</button>
   </nav>
@@ -245,6 +312,7 @@ export function initHelpDialog(): HelpDialog {
     }
     if (id === 'tutorial') pane.innerHTML = TUTORIAL;
     else if (id === 'about') pane.innerHTML = aboutHtml();
+    else if (id === 'guidelines') pane.innerHTML = GUIDELINES;
     else {
       const topic = TOPICS.find((t) => t.id === id) ?? TOPICS[0];
       pane.innerHTML = `<h3 class="settings-heading">${topic.title}</h3><div class="help-body">${topic.html}</div>`;

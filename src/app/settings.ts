@@ -20,6 +20,8 @@ export interface DrawingSettings {
   wedgeWidth: number;
   bondColor: string;
   showGrid: boolean;
+  /** Draw aromatic rings with an inner circle instead of alternating single/double bonds (display only). */
+  aromaticCircles: boolean;
 }
 
 export interface AppSettings {
@@ -28,16 +30,22 @@ export interface AppSettings {
   apiKeys: Record<ProviderId, string>;
 }
 
+/**
+ * Defaults follow the ACS journal style (ChemDraw "ACS Document 1996"): bond 14.4 pt, line 0.6 pt,
+ * bold/wedge 2.0 pt, double-bond gap 18% of the bond, Arial/Helvetica 10 pt. Kept in proportion to a
+ * 30 px on-screen bond (x 30/14.4): line 1.25 px, wedge 4 px, label 21 px, each double line 9% off the axis.
+ */
 export const DEFAULT_DRAWING: DrawingSettings = {
   bondLength: 30,
-  bondWidth: 1.5,
-  fontSize: 14,
+  bondWidth: 1.25,
+  fontSize: 21,
   fontFamily: 'Arial, sans-serif',
   fontWeight: 'normal',
   doubleSpacing: 9,
-  wedgeWidth: 8,
+  wedgeWidth: 4,
   bondColor: '#000000',
   showGrid: false,
+  aromaticCircles: false,
 };
 
 export const FONT_FAMILIES: { value: string; label: string }[] = [
@@ -85,6 +93,7 @@ export function sanitize(raw: unknown): AppSettings {
   if (d.fontWeight === 'bold' || d.fontWeight === 'normal') out.drawing.fontWeight = d.fontWeight;
   if (typeof d.bondColor === 'string' && /^#[0-9a-f]{6}$/i.test(d.bondColor)) out.drawing.bondColor = d.bondColor;
   if (typeof d.showGrid === 'boolean') out.drawing.showGrid = d.showGrid;
+  if (typeof d.aromaticCircles === 'boolean') out.drawing.aromaticCircles = d.aromaticCircles;
   const keys = src.apiKeys ?? {};
   for (const id of Object.keys(out.apiKeys) as ProviderId[]) {
     if (typeof keys[id] === 'string') out.apiKeys[id] = (keys[id] as string).trim();
@@ -121,6 +130,7 @@ export function applyDrawingStyle(style: DrawingStyle, d: DrawingSettings): void
   style.wedgeWidth = d.wedgeWidth;
   style.bondColor = d.bondColor;
   style.showGrid = d.showGrid;
+  style.aromaticCircles = d.aromaticCircles;
   style.bondLength = d.bondLength;
 }
 

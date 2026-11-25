@@ -6,13 +6,13 @@ export class DrawingStyle {
   // Atom styling
   atomColor: string = '#000000';           // Atom label color
   atomFontFamily: string = 'Arial, sans-serif';
-  atomFontSize: number = 14;               // Points
+  atomFontSize: number = 21;               // Pixels (ACS 1996 proportions: 10 pt label : 14.4 pt bond)
   atomFontWeight: string = 'normal';
   atomRadius: number = 20;                 // Pixels (for selection, not drawing)
 
   // Bond styling
   bondColor: string = '#000000';
-  bondWidth: number = 1.5;                 // Pixels
+  bondWidth: number = 1.25;                // Pixels (ACS: 0.6 pt line : 14.4 pt bond)
   doubleLineSpacing: number = 0.09;        // Ratio of bond length, each line from the axis (gap between lines = 2x, i.e. 18%)
   /** Offset double bonds: how far the shorter second line is pulled in at each end (ratio of bond length). */
   doubleInnerInset: number = 0.15;
@@ -21,17 +21,19 @@ export class DrawingStyle {
   aromaticDashSpacing: number = 4;         // Pixels
 
   // Bond stereochemistry
-  wedgeWidth: number = 8;                  // Pixels at end
-  hashLineSpacing: number = 3;             // Pixels between hash lines
+  wedgeWidth: number = 4;                  // Pixels at end (ACS: 2.0 pt bold width : 14.4 pt bond)
+  hashLineSpacing: number = 3;
+  /** Aromatic rings: inner circle (true) or Kekulé alternating bonds (false). Display only. */
+  aromaticCircles: boolean = false;             // Pixels between hash lines
 
   // Implicit hydrogens
   showImplicitHydrogens: boolean = false;
   hydrogenColor: string = '#333333';
-  hydrogenFontSize: number = 12;
+  hydrogenFontSize: number = 18;
 
   // Formal charges
   chargeColor: string = '#CC0000';         // Red for charges
-  chargeFontSize: number = 10;
+  chargeFontSize: number = 15;
 
   // Selection and highlighting
   selectionColor: string = '#0066FF';      // Blue
